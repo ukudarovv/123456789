@@ -1,0 +1,528 @@
+[
+  {
+    "model": "dictionaries.city",
+    "pk": 3,
+    "fields": {
+      "name_ru": "Шымкент",
+      "name_kz": "Шымкент",
+      "is_active": true,
+      "sort_order": 3
+    }
+  },
+  {
+    "model": "dictionaries.city",
+    "pk": 4,
+    "fields": {
+      "name_ru": "Караганда",
+      "name_kz": "Қарағанды",
+      "is_active": true,
+      "sort_order": 4
+    }
+  },
+  {
+    "model": "dictionaries.city",
+    "pk": 5,
+    "fields": {
+      "name_ru": "Актобе",
+      "name_kz": "Ақтөбе",
+      "is_active": true,
+      "sort_order": 5
+    }
+  },
+  {
+    "model": "dictionaries.category",
+    "pk": 3,
+    "fields": {
+      "code": "C",
+      "name_ru": "Категория C",
+      "name_kz": "Санат C",
+      "is_active": true,
+      "sort_order": 3
+    }
+  },
+  {
+    "model": "catalog.school",
+    "pk": 2,
+    "fields": {
+      "city": 1,
+      "name_ru": "Автошкола Алматы-Центр",
+      "name_kz": "Автошкола Алматы-Орталық",
+      "rating": "4.8",
+      "trust_index": 90,
+      "address_ru": "пр. Абая, 150",
+      "address_kz": "Абай даңғылы, 150",
+      "nearest_intake_text_ru": "Каждый понедельник",
+      "nearest_intake_text_kz": "Дүйсенбі сайын",
+      "contact_phone": "+77012345678",
+      "whatsapp_phone": "+77012345678",
+      "is_active": true,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "catalog.school",
+    "pk": 3,
+    "fields": {
+      "city": 1,
+      "name_ru": "Автошкола Премиум Алматы",
+      "name_kz": "Автошкола Премиум Алматы",
+      "rating": "4.9",
+      "trust_index": 95,
+      "address_ru": "ул. Сатпаева, 30",
+      "address_kz": "Сәтпаев к-сі, 30",
+      "nearest_intake_text_ru": "Еженедельно",
+      "nearest_intake_text_kz": "Апта сайын",
+      "contact_phone": "+77023456789",
+      "whatsapp_phone": "+77023456789",
+      "is_active": true,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "catalog.school",
+    "pk": 4,
+    "fields": {
+      "city": 2,
+      "name_ru": "Автошкола Астана-Север",
+      "name_kz": "Автошкола Астана-Солтүстік",
+      "rating": "4.6",
+      "trust_index": 85,
+      "address_ru": "пр. Кабанбай батыра, 25",
+      "address_kz": "Қабанбай батыр даңғылы, 25",
+      "contact_phone": "+77034567890",
+      "whatsapp_phone": "+77034567890",
+      "is_active": true,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "catalog.school",
+    "pk": 5,
+    "fields": {
+      "city": 2,
+      "name_ru": "Автошкола Столица",
+      "name_kz": "Автошкола Астана",
+      "rating": "4.7",
+      "trust_index": 88,
+      "address_ru": "ул. Бейбитшилик, 15",
+      "address_kz": "Бейбітшілік к-сі, 15",
+      "contact_phone": "+77045678901",
+      "whatsapp_phone": "+77045678901",
+      "is_active": true,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "catalog.school",
+    "pk": 6,
+    "fields": {
+      "city": 3,
+      "name_ru": "Автошкола Шымкент",
+      "name_kz": "Автошкола Шымкент",
+      "rating": "4.5",
+      "trust_index": 82,
+      "address_ru": "ул. Тауке хана, 20",
+      "address_kz": "Тәуке хан к-сі, 20",
+      "contact_phone": "+77056789012",
+      "whatsapp_phone": "+77056789012",
+      "is_active": true,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "catalog.schooltariff",
+    "pk": 3,
+    "fields": {
+      "school": 1,
+      "tariff_plan": 3,
+      "price_kzt": 100000,
+      "currency": "KZT",
+      "description_ru": "Полный курс с дополнительными занятиями",
+      "is_active": true
+    }
+  },
+  {
+    "model": "catalog.schooltariff",
+    "pk": 4,
+    "fields": {
+      "school": 2,
+      "tariff_plan": 1,
+      "price_kzt": 65000,
+      "currency": "KZT",
+      "is_active": true
+    }
+  },
+  {
+    "model": "catalog.schooltariff",
+    "pk": 5,
+    "fields": {
+      "school": 2,
+      "tariff_plan": 2,
+      "price_kzt": 85000,
+      "currency": "KZT",
+      "is_active": true
+    }
+  },
+  {
+    "model": "catalog.schooltariff",
+    "pk": 6,
+    "fields": {
+      "school": 2,
+      "tariff_plan": 3,
+      "price_kzt": 110000,
+      "currency": "KZT",
+      "is_active": true
+    }
+  },
+  {
+    "model": "catalog.schooltariff",
+    "pk": 7,
+    "fields": {
+      "school": 3,
+      "tariff_plan": 1,
+      "price_kzt": 70000,
+      "currency": "KZT",
+      "is_active": true
+    }
+  },
+  {
+    "model": "catalog.schooltariff",
+    "pk": 8,
+    "fields": {
+      "school": 3,
+      "tariff_plan": 2,
+      "price_kzt": 90000,
+      "currency": "KZT",
+      "is_active": true
+    }
+  },
+  {
+    "model": "catalog.schooltariff",
+    "pk": 9,
+    "fields": {
+      "school": 3,
+      "tariff_plan": 3,
+      "price_kzt": 120000,
+      "currency": "KZT",
+      "is_active": true
+    }
+  },
+  {
+    "model": "catalog.schooltariff",
+    "pk": 10,
+    "fields": {
+      "school": 4,
+      "tariff_plan": 1,
+      "price_kzt": 62000,
+      "currency": "KZT",
+      "is_active": true
+    }
+  },
+  {
+    "model": "catalog.schooltariff",
+    "pk": 11,
+    "fields": {
+      "school": 4,
+      "tariff_plan": 2,
+      "price_kzt": 82000,
+      "currency": "KZT",
+      "is_active": true
+    }
+  },
+  {
+    "model": "catalog.schooltariff",
+    "pk": 12,
+    "fields": {
+      "school": 4,
+      "tariff_plan": 3,
+      "price_kzt": 105000,
+      "currency": "KZT",
+      "is_active": true
+    }
+  },
+  {
+    "model": "catalog.schooltariff",
+    "pk": 13,
+    "fields": {
+      "school": 5,
+      "tariff_plan": 1,
+      "price_kzt": 64000,
+      "currency": "KZT",
+      "is_active": true
+    }
+  },
+  {
+    "model": "catalog.schooltariff",
+    "pk": 14,
+    "fields": {
+      "school": 5,
+      "tariff_plan": 2,
+      "price_kzt": 84000,
+      "currency": "KZT",
+      "is_active": true
+    }
+  },
+  {
+    "model": "catalog.schooltariff",
+    "pk": 15,
+    "fields": {
+      "school": 5,
+      "tariff_plan": 3,
+      "price_kzt": 108000,
+      "currency": "KZT",
+      "is_active": true
+    }
+  },
+  {
+    "model": "catalog.schooltariff",
+    "pk": 16,
+    "fields": {
+      "school": 6,
+      "tariff_plan": 1,
+      "price_kzt": 58000,
+      "currency": "KZT",
+      "is_active": true
+    }
+  },
+  {
+    "model": "catalog.schooltariff",
+    "pk": 17,
+    "fields": {
+      "school": 6,
+      "tariff_plan": 2,
+      "price_kzt": 78000,
+      "currency": "KZT",
+      "is_active": true
+    }
+  },
+  {
+    "model": "catalog.schooltariff",
+    "pk": 18,
+    "fields": {
+      "school": 6,
+      "tariff_plan": 3,
+      "price_kzt": 98000,
+      "currency": "KZT",
+      "is_active": true
+    }
+  },
+  {
+    "model": "catalog.instructor",
+    "pk": 2,
+    "fields": {
+      "city": 1,
+      "display_name": "Мария",
+      "gender": "F",
+      "gearbox": "AT",
+      "price_kzt": 8500,
+      "rating": "4.8",
+      "bio_ru": "Опытный инструктор, стаж 10 лет",
+      "is_active": true,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "catalog.instructor",
+    "pk": 3,
+    "fields": {
+      "city": 1,
+      "display_name": "Ерлан",
+      "gender": "M",
+      "gearbox": "MT",
+      "price_kzt": 9500,
+      "rating": "4.7",
+      "bio_ru": "Специалист по МКПП",
+      "is_active": true,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "catalog.instructor",
+    "pk": 4,
+    "fields": {
+      "city": 1,
+      "display_name": "Айгуль",
+      "gender": "F",
+      "gearbox": "MT",
+      "price_kzt": 9200,
+      "rating": "4.9",
+      "bio_ru": "Инструктор с большим опытом",
+      "is_active": true,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "catalog.instructor",
+    "pk": 5,
+    "fields": {
+      "city": 1,
+      "display_name": "Данияр",
+      "gender": "M",
+      "gearbox": "AT",
+      "price_kzt": 8800,
+      "rating": "4.6",
+      "is_active": true,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "catalog.instructor",
+    "pk": 6,
+    "fields": {
+      "city": 2,
+      "display_name": "Нурлан",
+      "gender": "M",
+      "gearbox": "AT",
+      "price_kzt": 9000,
+      "rating": "4.8",
+      "is_active": true,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "catalog.instructor",
+    "pk": 7,
+    "fields": {
+      "city": 2,
+      "display_name": "Айжан",
+      "gender": "F",
+      "gearbox": "AT",
+      "price_kzt": 8700,
+      "rating": "4.7",
+      "is_active": true,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "catalog.instructor",
+    "pk": 8,
+    "fields": {
+      "city": 2,
+      "display_name": "Талгат",
+      "gender": "M",
+      "gearbox": "MT",
+      "price_kzt": 10000,
+      "rating": "4.9",
+      "is_active": true,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "catalog.instructor",
+    "pk": 9,
+    "fields": {
+      "city": 2,
+      "display_name": "Жанар",
+      "gender": "F",
+      "gearbox": "MT",
+      "price_kzt": 9300,
+      "rating": "4.8",
+      "is_active": true,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "catalog.instructor",
+    "pk": 10,
+    "fields": {
+      "city": 3,
+      "display_name": "Бауыржан",
+      "gender": "M",
+      "gearbox": "AT",
+      "price_kzt": 8500,
+      "rating": "4.5",
+      "is_active": true,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "catalog.instructor",
+    "pk": 11,
+    "fields": {
+      "city": 3,
+      "display_name": "Гульнара",
+      "gender": "F",
+      "gearbox": "AT",
+      "price_kzt": 8200,
+      "rating": "4.6",
+      "is_active": true,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "catalog.instructor",
+    "pk": 12,
+    "fields": {
+      "city": 4,
+      "display_name": "Ержан",
+      "gender": "M",
+      "gearbox": "AT",
+      "price_kzt": 8800,
+      "rating": "4.7",
+      "is_active": true,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "catalog.instructor",
+    "pk": 13,
+    "fields": {
+      "city": 4,
+      "display_name": "Алма",
+      "gender": "F",
+      "gearbox": "MT",
+      "price_kzt": 9100,
+      "rating": "4.8",
+      "is_active": true,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "catalog.instructor",
+    "pk": 14,
+    "fields": {
+      "city": 5,
+      "display_name": "Марат",
+      "gender": "M",
+      "gearbox": "AT",
+      "price_kzt": 8600,
+      "rating": "4.6",
+      "is_active": true,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "catalog.instructor",
+    "pk": 15,
+    "fields": {
+      "city": 5,
+      "display_name": "Сауле",
+      "gender": "F",
+      "gearbox": "AT",
+      "price_kzt": 8400,
+      "rating": "4.5",
+      "is_active": true,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  }
+]
+

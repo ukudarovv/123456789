@@ -1,0 +1,278 @@
+{% extends "srm_ui/base.html" %}
+
+{% block title %}Дашборд - AvtoMat SRM{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Дашборд</h2>
+    <a href="{% url 'srm_ui:lead_list' %}" class="btn btn-primary">Все лиды</a>
+</div>
+
+<!-- Метрики -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary">
+            <div class="card-body">
+                <h5 class="card-title">Всего лидов</h5>
+                <h2 class="mb-0">{{ total_leads }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-success">
+            <div class="card-body">
+                <h5 class="card-title">За сегодня</h5>
+                <h2 class="mb-0">{{ today_leads }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-info">
+            <div class="card-body">
+                <h5 class="card-title">За 30 дней</h5>
+                <h2 class="mb-0">{{ recent_leads }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-warning">
+            <div class="card-body">
+                <h5 class="card-title">Новых</h5>
+                <h2 class="mb-0">{{ conversion_data.new }}</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <!-- Лиды по статусам -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Лиды по статусам</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm">
+                    <tr>
+                        <td>Новая</td>
+                        <td><span class="badge bg-warning">{{ conversion_data.new }}</span></td>
+                    </tr>
+                    <tr>
+                        <td>Подтверждена</td>
+                        <td><span class="badge bg-primary">{{ conversion_data.confirmed }}</span></td>
+                    </tr>
+                    <tr>
+                        <td>Оплачено</td>
+                        <td><span class="badge bg-success">{{ conversion_data.paid }}</span></td>
+                    </tr>
+                    <tr>
+                        <td>Завершено</td>
+                        <td><span class="badge bg-dark">{{ conversion_data.done }}</span></td>
+                    </tr>
+                    <tr>
+                        <td>Отменено</td>
+                        <td><span class="badge bg-danger">{{ conversion_data.canceled }}</span></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Лиды по типам -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Лиды по типам</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm">
+                    {% for type, count in type_counts.items %}
+                    <tr>
+                        <td>
+                            {% if type == "SCHOOL" %}
+                                🏫 Автошкола
+                            {% elif type == "INSTRUCTOR" %}
+                                🚗 Инструктор
+                            {% elif type == "TESTS" %}
+                                📘 Тесты
+                            {% else %}
+                                {{ type }}
+                            {% endif %}
+                        </td>
+                        <td><span class="badge bg-secondary">{{ count }}</span></td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- График лидов по дням -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Лиды за последние 7 дней</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="dailyLeadsChart" height="50"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <!-- Топ городов -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Топ городов</h5>
+            </div>
+            <div class="card-body">
+                {% if top_cities %}
+                    <table class="table table-sm">
+                        {% for city in top_cities %}
+                        <tr>
+                            <td>{{ city.city__name_ru }}</td>
+                            <td><span class="badge bg-info">{{ city.count }}</span></td>
+                        </tr>
+                        {% endfor %}
+                    </table>
+                {% else %}
+                    <p class="text-muted">Нет данных</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Топ категорий -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Топ категорий</h5>
+            </div>
+            <div class="card-body">
+                {% if top_categories %}
+                    <table class="table table-sm">
+                        {% for category in top_categories %}
+                        <tr>
+                            <td>{{ category.category__name_ru }}</td>
+                            <td><span class="badge bg-info">{{ category.count }}</span></td>
+                        </tr>
+                        {% endfor %}
+                    </table>
+                {% else %}
+                    <p class="text-muted">Нет данных</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Последние лиды -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Последние лиды</h5>
+            </div>
+            <div class="card-body">
+                {% if latest_leads %}
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Имя</th>
+                                    <th>Телефон</th>
+                                    <th>Тип</th>
+                                    <th>Статус</th>
+                                    <th>Дата</th>
+                                    <th>Действия</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for lead in latest_leads %}
+                                <tr>
+                                    <td><small>{{ lead.id|truncatechars:8 }}</small></td>
+                                    <td>{{ lead.name }}</td>
+                                    <td>{{ lead.phone }}</td>
+                                    <td>
+                                        {% if lead.type == "SCHOOL" %}
+                                            <span class="badge bg-info">🏫 Автошкола</span>
+                                        {% elif lead.type == "INSTRUCTOR" %}
+                                            <span class="badge bg-info">🚗 Инструктор</span>
+                                        {% elif lead.type == "TESTS" %}
+                                            <span class="badge bg-info">📘 Тесты</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ lead.type }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if lead.status == "NEW" %}
+                                            <span class="badge bg-warning">Новая</span>
+                                        {% elif lead.status == "CONFIRMED" %}
+                                            <span class="badge bg-primary">Подтверждена</span>
+                                        {% elif lead.status == "PAID" %}
+                                            <span class="badge bg-success">Оплачено</span>
+                                        {% elif lead.status == "DONE" %}
+                                            <span class="badge bg-dark">Завершено</span>
+                                        {% elif lead.status == "CANCELED" %}
+                                            <span class="badge bg-danger">Отменено</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ lead.status }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td><small>{{ lead.created_at|date:"d.m.Y H:i" }}</small></td>
+                                    <td>
+                                        <a href="{% url 'srm_ui:lead_detail' lead.id %}" class="btn btn-sm btn-outline-primary">Открыть</a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted">Нет лидов</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // График лидов по дням
+    const ctx = document.getElementById('dailyLeadsChart');
+    if (ctx) {
+        const dailyData = {{ daily_leads|safe }};
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: dailyData.map(item => item.date),
+                datasets: [{
+                    label: 'Количество лидов',
+                    data: dailyData.map(item => item.count),
+                    borderColor: 'rgb(75, 192, 192)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                }
+            }
+        });
+    }
+</script>
+{% endblock %}
+

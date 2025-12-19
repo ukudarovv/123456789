@@ -1,0 +1,40 @@
+[
+  {
+    "model": "settings_app.projectsetting",
+    "pk": 1,
+    "fields": {
+      "key": "TESTS_PRICE_KZT",
+      "value_json": 15000,
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "settings_app.projectsetting",
+    "pk": 2,
+    "fields": {
+      "key": "OWNER_WHATSAPP_PHONE",
+      "value_json": "+77001234567",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "settings_app.whatsapptemplate",
+    "pk": 1,
+    "fields": {
+      "scope": "SCHOOL_CLIENT_MESSAGE",
+      "language": "RU",
+      "template_text": "Р—РґСЂР°РІСЃС‚РІСѓР№С‚Рµ, РјРµРЅСЏ Р·РѕРІСѓС‚ {name}. РҐРѕС‡Сѓ Р·Р°РїРёСЃР°С‚СЊСЃСЏ РІ Р°РІС‚РѕС€РєРѕР»Сѓ {school}. Р“РѕСЂРѕРґ: {city}. РўРµР»РµС„РѕРЅ: {phone}. РўР°СЂРёС„: {tariff} ({price} KZT).",
+      "is_active": true
+    }
+  },
+  {
+    "model": "settings_app.whatsapptemplate",
+    "pk": 2,
+    "fields": {
+      "scope": "TESTS_OWNER_MESSAGE",
+      "language": "RU",
+      "template_text": "Р—Р°СЏРІРєР° РЅР° С‚РµСЃС‚С‹: РРјСЏ {name}, РРРќ {iin}, РўРµР»РµС„РѕРЅ {phone}, WhatsApp {whatsapp}, Email {email}.",
+      "is_active": true
+    }
+  }
+]

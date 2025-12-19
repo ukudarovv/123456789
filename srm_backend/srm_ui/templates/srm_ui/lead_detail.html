@@ -1,0 +1,446 @@
+{% extends "srm_ui/base.html" %}
+
+{% block title %}Лид {{ lead.id|truncatechars:8 }} - AvtoMat SRM{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Лид {{ lead.id|truncatechars:8 }}</h2>
+    <a href="{% url 'srm_ui:lead_list' %}" class="btn btn-secondary">Назад к списку</a>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <!-- Основная информация -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Основная информация</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless">
+                    <tr>
+                        <th width="200">Тип:</th>
+                        <td><span class="badge bg-info">{{ lead.get_type_display }}</span></td>
+                    </tr>
+                    <tr>
+                        <th>Статус:</th>
+                        <td>
+                            {% if lead.status == "NEW" %}
+                                <span class="badge bg-warning">{{ lead.get_status_display }}</span>
+                            {% elif lead.status == "CONFIRMED" %}
+                                <span class="badge bg-primary">{{ lead.get_status_display }}</span>
+                            {% elif lead.status == "PAID" %}
+                                <span class="badge bg-success">{{ lead.get_status_display }}</span>
+                            {% elif lead.status == "DONE" %}
+                                <span class="badge bg-dark">{{ lead.get_status_display }}</span>
+                            {% elif lead.status == "CANCELED" %}
+                                <span class="badge bg-danger">{{ lead.get_status_display }}</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ lead.get_status_display }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Язык:</th>
+                        <td>
+                            {% if lead.language == "RU" %}
+                                <span class="badge bg-info">RU</span>
+                            {% elif lead.language == "KZ" %}
+                                <span class="badge bg-info">KZ</span>
+                            {% else %}
+                                {{ lead.language }}
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Дата создания:</th>
+                        <td>{{ lead.created_at|date:"d.m.Y H:i" }}</td>
+                    </tr>
+                    <tr>
+                        <th>Последнее обновление:</th>
+                        <td>{{ lead.updated_at|date:"d.m.Y H:i" }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- Контакты -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Контакты</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless">
+                    <tr>
+                        <th width="200">Имя:</th>
+                        <td>{{ lead.name }}</td>
+                    </tr>
+                    <tr>
+                        <th>Телефон:</th>
+                        <td>{{ lead.phone }}</td>
+                    </tr>
+                    {% if lead.iin %}
+                    <tr>
+                        <th>ИИН:</th>
+                        <td>{{ lead.iin }}</td>
+                    </tr>
+                    {% endif %}
+                    {% if lead.whatsapp %}
+                    <tr>
+                        <th>WhatsApp:</th>
+                        <td>{{ lead.whatsapp }}</td>
+                    </tr>
+                    {% endif %}
+                    {% if lead.email %}
+                    <tr>
+                        <th>Email:</th>
+                        <td>{{ lead.email }}</td>
+                    </tr>
+                    {% endif %}
+                </table>
+            </div>
+        </div>
+
+        <!-- Параметры выбора -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Параметры выбора</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless">
+                    {% if lead.city %}
+                    <tr>
+                        <th width="200">Город:</th>
+                        <td>{{ lead.city.name_ru }}</td>
+                    </tr>
+                    {% endif %}
+                    {% if lead.category %}
+                    <tr>
+                        <th>Категория:</th>
+                        <td>
+                            {% if lead.language == "KZ" %}
+                                {{ lead.category.name_kz|default:lead.category.name_ru }}
+                            {% else %}
+                                {{ lead.category.name_ru }}
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endif %}
+                    {% if lead.training_format %}
+                    <tr>
+                        <th>Формат обучения:</th>
+                        <td>{{ lead.training_format.name_ru }}</td>
+                    </tr>
+                    {% endif %}
+                    {% if lead.school %}
+                    <tr>
+                        <th>Автошкола:</th>
+                        <td>{{ lead.school.name_ru }}</td>
+                    </tr>
+                    {% endif %}
+                    {% if lead.tariff_plan %}
+                    <tr>
+                        <th>Тариф:</th>
+                        <td>
+                            {% if lead.tariff_plan.id == 1 %}
+                                {% if lead.language == "KZ" %}Негізгі{% else %}Базовый{% endif %}
+                            {% elif lead.tariff_plan.id == 2 %}
+                                Стандарт
+                            {% elif lead.tariff_plan.id == 3 %}
+                                Премиум
+                            {% else %}
+                                {{ lead.tariff_plan.code }}
+                            {% endif %}
+                            {% if lead.tariff_price_kzt %} ({{ lead.tariff_price_kzt }} KZT){% endif %}
+                        </td>
+                    </tr>
+                    {% endif %}
+                    {% if lead.instructor %}
+                    <tr>
+                        <th>Инструктор:</th>
+                        <td>{{ lead.instructor.display_name }}</td>
+                    </tr>
+                    {% endif %}
+                    {% if lead.gearbox %}
+                    <tr>
+                        <th>КПП:</th>
+                        <td>{{ lead.gearbox }}</td>
+                    </tr>
+                    {% endif %}
+                    {% if lead.preferred_instructor_gender %}
+                    <tr>
+                        <th>Пол инструктора:</th>
+                        <td>{{ lead.preferred_instructor_gender }}</td>
+                    </tr>
+                    {% endif %}
+                    {% if lead.has_driver_license is not None %}
+                    <tr>
+                        <th>Есть права:</th>
+                        <td>{% if lead.has_driver_license %}Да{% else %}Нет{% endif %}</td>
+                    </tr>
+                    {% endif %}
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <!-- Быстрые действия -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Быстрые действия</h5>
+            </div>
+            <div class="card-body">
+                <button onclick="sendWhatsApp()" class="btn btn-success w-100 mb-2">
+                    📲 Отправить WhatsApp
+                </button>
+                {% if lead.payment_link %}
+                    <a href="{{ lead.payment_link }}" target="_blank" class="btn btn-info w-100 mb-2">
+                        💳 Открыть ссылку на оплату
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Прикрепить ссылку на оплату -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Ссылка на оплату</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-2">
+                    <input type="text" class="form-control" id="payment_link" 
+                           value="{{ lead.payment_link|default:'' }}" 
+                           placeholder="Введите ссылку на оплату">
+                </div>
+                <button onclick="savePaymentLink()" class="btn btn-primary w-100">Сохранить ссылку</button>
+            </div>
+        </div>
+
+        <!-- Изменение статуса -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Изменить статус</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{% url 'srm_ui:lead_status_update' lead.id %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">Новый статус</label>
+                        {{ status_form.new_status }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Комментарий</label>
+                        {{ status_form.note }}
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Сохранить</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- История статусов -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">История статусов</h5>
+            </div>
+            <div class="card-body">
+                {% if status_history %}
+                    <div class="timeline">
+                        {% for history in status_history %}
+                        <div class="timeline-item mb-3">
+                            <div class="d-flex">
+                                <div class="timeline-marker me-3">
+                                    <div class="timeline-dot"></div>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <strong>
+                                                {% if history.new_status == "NEW" %}
+                                                    <span class="badge bg-warning">Новый</span>
+                                                {% elif history.new_status == "CONFIRMED" %}
+                                                    <span class="badge bg-primary">Подтвержден</span>
+                                                {% elif history.new_status == "PAID" %}
+                                                    <span class="badge bg-success">Оплачен</span>
+                                                {% elif history.new_status == "DONE" %}
+                                                    <span class="badge bg-dark">Выполнен</span>
+                                                {% elif history.new_status == "CANCELED" %}
+                                                    <span class="badge bg-danger">Отменен</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">{{ history.new_status }}</span>
+                                                {% endif %}
+                                            </strong>
+                                            {% if history.old_status %}
+                                                <small class="text-muted ms-2">(было: 
+                                                    {% if history.old_status == "NEW" %}
+                                                        Новый
+                                                    {% elif history.old_status == "CONFIRMED" %}
+                                                        Подтвержден
+                                                    {% elif history.old_status == "PAID" %}
+                                                        Оплачен
+                                                    {% elif history.old_status == "DONE" %}
+                                                        Выполнен
+                                                    {% elif history.old_status == "CANCELED" %}
+                                                        Отменен
+                                                    {% else %}
+                                                        {{ history.old_status }}
+                                                    {% endif %}
+                                                )</small>
+                                            {% endif %}
+                                        </div>
+                                        <small class="text-muted">{{ history.changed_at|date:"d.m.Y H:i" }}</small>
+                                    </div>
+                                    {% if history.changed_by_user %}
+                                        <small class="text-muted d-block">Изменил: {{ history.changed_by_user.username }}</small>
+                                    {% endif %}
+                                    {% if history.note %}
+                                        <div class="mt-2 p-2 bg-light rounded">
+                                            <small>{{ history.note }}</small>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted">История пуста</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Комментарии -->
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Комментарии</h5>
+            </div>
+            <div class="card-body">
+                <!-- Форма добавления комментария -->
+                <form id="commentForm" class="mb-3">
+                    {% csrf_token %}
+                    <div class="mb-2">
+                        <textarea class="form-control" id="commentText" rows="3" placeholder="Добавить комментарий..." required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm">Добавить комментарий</button>
+                </form>
+                
+                <!-- Список комментариев -->
+                <div id="commentsList">
+                    {% if comments %}
+                        {% for comment in comments %}
+                        <div class="card mb-2">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <strong>{{ comment.user.username }}</strong>
+                                    <small class="text-muted">{{ comment.created_at|date:"d.m.Y H:i" }}</small>
+                                </div>
+                                <p class="mb-0 mt-2">{{ comment.comment }}</p>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted">Нет комментариев</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function sendWhatsApp() {
+    fetch('{% url "srm_ui:lead_whatsapp_link" lead.id %}')
+        .then(response => response.json())
+        .then(data => {
+            if (data.wa_link) {
+                window.open(data.wa_link, '_blank');
+            } else {
+                alert('Ошибка: ' + (data.error || 'Не удалось сгенерировать ссылку'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Произошла ошибка при генерации WhatsApp ссылки');
+        });
+}
+
+function savePaymentLink() {
+    const link = document.getElementById('payment_link').value;
+    const formData = new FormData();
+    formData.append('payment_link', link);
+    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+    
+    fetch('{% url "srm_ui:lead_payment_link_update" lead.id %}', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        if (response.redirected) {
+            window.location.href = response.url;
+        } else {
+            return response.json();
+        }
+    })
+    .then(data => {
+        if (data && data.error) {
+            alert('Ошибка: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Произошла ошибка при сохранении ссылки');
+    });
+}
+
+// Обработка формы комментариев
+document.getElementById('commentForm')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+    const commentText = document.getElementById('commentText').value;
+    if (!commentText.trim()) {
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('comment', commentText);
+    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+    
+    fetch('{% url "srm_ui:add_comment" lead.id %}', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Добавляем новый комментарий в список
+            const commentsList = document.getElementById('commentsList');
+            const commentDiv = document.createElement('div');
+            commentDiv.className = 'card mb-2';
+            commentDiv.innerHTML = `
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <strong>${data.comment.user}</strong>
+                        <small class="text-muted">${data.comment.created_at}</small>
+                    </div>
+                    <p class="mb-0 mt-2">${data.comment.comment}</p>
+                </div>
+            `;
+            if (commentsList.querySelector('.text-muted')) {
+                commentsList.innerHTML = '';
+            }
+            commentsList.insertBefore(commentDiv, commentsList.firstChild);
+            document.getElementById('commentText').value = '';
+        } else {
+            alert('Ошибка: ' + (data.error || 'Не удалось добавить комментарий'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Произошла ошибка при добавлении комментария');
+    });
+});
+</script>
+{% endblock %}
+

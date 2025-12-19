@@ -1,0 +1,71 @@
+{% extends "srm_ui/base.html" %}
+
+{% block title %}{% if template %}Редактирование{% else %}Создание{% endif %} WhatsApp шаблона - AvtoMat SRM{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>{% if template %}Редактирование{% else %}Создание{% endif %} WhatsApp шаблона</h2>
+    <a href="{% url 'srm_ui:whatsapp_template_list' %}" class="btn btn-secondary">Назад к списку</a>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Параметры шаблона</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">Область</label>
+                        <select name="scope" class="form-select" required>
+                            {% for value, label in scopes %}
+                                <option value="{{ value }}" {% if template and template.scope == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Язык</label>
+                        <select name="language" class="form-select" required>
+                            {% for value, label in languages %}
+                                <option value="{{ value }}" {% if template and template.language == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Текст шаблона</label>
+                        <textarea name="template_text" class="form-control" rows="10" required>{% if template %}{{ template.template_text }}{% endif %}</textarea>
+                        <small class="form-text text-muted">
+                            Используйте переменные в фигурных скобках: {name}, {phone}, {school_name}, {address}, {tariff_name}, {tariff_price}, {instructor_name}, {gearbox}, {iin}, {whatsapp}, {category}, {language}
+                        </small>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="is_active" id="is_active" {% if template and template.is_active or not template %}checked{% endif %}>
+                            <label class="form-check-label" for="is_active">
+                                Активен
+                            </label>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        {% if preview_data %}
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Предпросмотр</h5>
+            </div>
+            <div class="card-body">
+                <pre style="white-space: pre-wrap; font-family: inherit;">{{ preview_data }}</pre>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

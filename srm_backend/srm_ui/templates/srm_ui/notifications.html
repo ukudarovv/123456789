@@ -1,0 +1,50 @@
+{% extends "srm_ui/base.html" %}
+
+{% block title %}Уведомления - AvtoMat SRM{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Уведомления</h2>
+    <form method="post" action="{% url 'srm_ui:mark_all_notifications_read' %}" class="d-inline">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-primary">Пометить все как прочитанные</button>
+    </form>
+</div>
+
+{% if notifications %}
+    <div class="list-group">
+        {% for notification in notifications %}
+        <div class="list-group-item notification-item {% if not notification.is_read %}list-group-item-warning{% endif %}">
+            <div class="d-flex w-100 justify-content-between">
+                <h6 class="mb-1">
+                    {% if notification.notification_type == "NEW_LEAD" %}
+                        🆕 Новая заявка
+                    {% elif notification.notification_type == "STATUS_CHANGED" %}
+                        🔄 Изменен статус
+                    {% elif notification.notification_type == "PAYMENT_ADDED" %}
+                        💳 Добавлена ссылка на оплату
+                    {% else %}
+                        {{ notification.get_notification_type_display }}
+                    {% endif %}
+                </h6>
+                <small>{{ notification.created_at|date:"d.m.Y H:i" }}</small>
+            </div>
+            <p class="mb-1">
+                <a href="{% url 'srm_ui:lead_detail' notification.lead.id %}">
+                    Лид: {{ notification.lead.name }} ({{ notification.lead.get_type_display }})
+                </a>
+            </p>
+            {% if not notification.is_read %}
+            <form method="post" action="{% url 'srm_ui:mark_notification_read' notification.id %}" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-outline-secondary">Пометить как прочитанное</button>
+            </form>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <p class="text-muted">Нет уведомлений</p>
+{% endif %}
+{% endblock %}
+

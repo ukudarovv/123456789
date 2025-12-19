@@ -1,0 +1,122 @@
+import asyncio
+
+from aiogram import Bot, Dispatcher, Router, F
+from aiogram.client.default import DefaultBotProperties
+from aiogram.enums import ParseMode
+from aiogram.filters import CommandStart
+from aiogram.fsm.context import FSMContext
+from aiogram.fsm.storage.memory import MemoryStorage
+from aiogram.types import Message
+
+from config import BOT_TOKEN, DEFAULT_LANGUAGE
+from i18n import t
+from keyboards.common import main_menu, language_keyboard
+from handlers import tests_flow, schools_flow, instructors_flow, language_flow, certificate_flow
+from services.analytics import send_event
+from states_language import LanguageFlow
+
+
+async def get_user_language(message: Message, state: FSMContext) -> str:
+    """Получить язык пользователя из state или вернуть дефолтный"""
+    data = await state.get_data()
+    return data.get("language", DEFAULT_LANGUAGE)
+
+
+async def main():
+    if not BOT_TOKEN:
+        raise RuntimeError("BOT_TELEGRAM_TOKEN is not set")
+
+    bot = Bot(BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
+    dp = Dispatcher(storage=MemoryStorage())
+
+    root_router = Router()
+
+    @root_router.message(CommandStart())
+    async def cmd_start(message: Message, state: FSMContext):
+        # Отслеживаем вход в бот
+        await send_event("bot_started", {}, bot_user_id=message.from_user.id)
+        
+        # Проверяем, есть ли уже язык в state
+        data = await state.get_data()
+        lang = data.get("language")
+        
+        if not lang:
+            # Если языка нет - показываем выбор
+            await state.set_state(LanguageFlow.select)
+            await message.answer(
+                t("language_select", DEFAULT_LANGUAGE),
+                reply_markup=language_keyboard(),
+            )
+        else:
+            # Если язык уже выбран - показываем главное меню
+            await message.answer(
+                t("main_welcome", lang),
+                reply_markup=main_menu(lang),
+            )
+
+    # Обработчики кнопок главного меню - должны работать в любом состоянии
+    @root_router.message(F.text.in_(["Главное меню", "Басты мәзір", "главное меню", "басты мәзір"]))
+    async def back_to_menu(message: Message, state: FSMContext):
+        lang = await get_user_language(message, state)
+        await state.clear()
+        await message.answer(t("main_welcome", lang), reply_markup=main_menu(lang))
+    
+    # Обработчик "Нет водительских прав" → поток автошкол
+    @root_router.message(F.text.in_([
+        "❗ Нет водительских прав — хочу стать водителем",
+        "❗ Жүргізуші куәлігі жоқ — жүргізуші болғым келеді",
+    ]))
+    async def handle_no_license(message: Message, state: FSMContext):
+        await state.clear()
+        lang = await get_user_language(message, state)
+        await send_event("intent_selected", {"intent": "NO_LICENSE"}, bot_user_id=message.from_user.id)
+        # Сохраняем intent в state
+        await state.update_data(main_intent="NO_LICENSE", language=lang)
+        # Переход в поток автошкол
+        from handlers.schools_flow import schools_start
+        await schools_start(message, state)
+    
+    # Обработчик "Есть водительские права" → поток инструкторов
+    @root_router.message(F.text.in_([
+        "🚗 Есть водительские права — хочу освежить навыки",
+        "🚗 Жүргізуші куәлігі бар — дағдыларды жаңартқым келеді",
+    ]))
+    async def handle_has_license(message: Message, state: FSMContext):
+        await state.clear()
+        lang = await get_user_language(message, state)
+        await send_event("intent_selected", {"intent": "REFRESH"}, bot_user_id=message.from_user.id)
+        # Сохраняем intent в state
+        await state.update_data(main_intent="REFRESH", language=lang)
+        # Переход в поток инструкторов
+        from handlers.instructors_flow import instructors_start
+        await instructors_start(message, state)
+    
+    # Обработчик "Есть сертификат" → новый поток выбора действия
+    @root_router.message(F.text.in_([
+        "📄 Есть сертификат, но не сдал экзамен",
+        "📄 Сертификат бар, бірақ емтихан тапсырылмаған",
+    ]))
+    async def handle_has_certificate(message: Message, state: FSMContext):
+        await state.clear()
+        lang = await get_user_language(message, state)
+        await send_event("intent_selected", {"intent": "CERT_NOT_PASSED"}, bot_user_id=message.from_user.id)
+        # Сохраняем intent в state
+        await state.update_data(main_intent="CERT_NOT_PASSED", language=lang)
+        # Переход в поток "Есть сертификат"
+        from handlers.certificate_flow import certificate_start
+        await certificate_start(message, state)
+
+    # Порядок важен: более специфичные роутеры должны быть первыми
+    dp.include_router(language_flow.router)
+    dp.include_router(certificate_flow.router)
+    dp.include_router(tests_flow.router)
+    dp.include_router(schools_flow.router)
+    dp.include_router(instructors_flow.router)
+    dp.include_router(root_router)  # Общие обработчики в конце
+
+    await dp.start_polling(bot)
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
+

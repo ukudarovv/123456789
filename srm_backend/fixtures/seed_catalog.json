@@ -1,0 +1,438 @@
+[
+  {
+    "model": "catalog.school",
+    "pk": 1,
+    "fields": {
+      "city": 1,
+      "name_ru": "Smart Автошкола",
+      "name_kz": "Smart Автомектеп",
+      "rating": "4.9",
+      "trust_index": 90,
+      "trust_index_text_ru": "высокий (20+ лет опыта, авторская методика)",
+      "trust_index_text_kz": "жоғары (20+ жыл тәжірибе, авторлық әдістеме)",
+      "description_ru": "№1 по уверенности за рулём и результату с первой попытки",
+      "description_kz": "Бірінші рет жүргізуде сенімділік пен нәтиже бойынша №1",
+      "address_ru": "г. Атырау, Курмангазы 70Б",
+      "address_kz": "Атырау қ., Құрманғазы 70Б",
+      "nearest_intake_date": "2025-01-19",
+      "nearest_intake_text_ru": "19 января",
+      "nearest_intake_text_kz": "19 қаңтар",
+      "contact_phone": "87788981396",
+      "whatsapp_phone": "87066768821",
+      "is_active": true,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "catalog.schooltariff",
+    "pk": 1,
+    "fields": {
+      "school": 1,
+      "tariff_plan": 1,
+      "price_kzt": 90000,
+      "currency": "KZT",
+      "description_ru": "• Теория: 12 уроков\n• Формат: онлайн / оффлайн (по желанию)\n• Вождение: 3 занятия по 45 минут\n• Учебные материалы + ПДД-тесты\n• Чат-поддержка\n• Сертификат",
+      "description_kz": "• Теория: 12 сабақ\n• Формат: онлайн / офлайн (қалауыңыз бойынша)\n• Жүргізу: 45 минуттан 3 сабақ\n• Оқу материалдары + ЖҚД тесттері\n• Чат-қолдау\n• Сертификат",
+      "is_active": true
+    }
+  },
+  {
+    "model": "catalog.schooltariff",
+    "pk": 2,
+    "fields": {
+      "school": 1,
+      "tariff_plan": 2,
+      "price_kzt": 120000,
+      "currency": "KZT",
+      "description_ru": "• 1 месяц — теория\n• Формат: онлайн / оффлайн (по желанию)\n• 2 месяц — 8 занятий по вождению\n• ПДД-тесты\n• Чат-поддержка 24/7\n• Свидетельство",
+      "description_kz": "• 1 ай — теория\n• Формат: онлайн / офлайн (қалауыңыз бойынша)\n• 2 ай — 8 жүргізу сабағы\n• ЖҚД тесттері\n• Чат-қолдау 24/7\n• Куәлік",
+      "is_active": true
+    }
+  },
+  {
+    "model": "catalog.schooltariff",
+    "pk": 3,
+    "fields": {
+      "school": 1,
+      "tariff_plan": 3,
+      "price_kzt": 150000,
+      "currency": "KZT",
+      "description_ru": "• 1 месяц — теория\n• Формат: онлайн / оффлайн (по желанию)\n• Учебная книга\n• ПДД-тесты\n• Чат-поддержка 24/7\n• Личные рекомендации от Миры\n• Свидетельство\n• 2 месяц — 10 занятий по вождению\n• Медосмотр включён",
+      "description_kz": "• 1 ай — теория\n• Формат: онлайн / офлайн (қалауыңыз бойынша)\n• Оқу кітабы\n• ЖҚД тесттері\n• Чат-қолдау 24/7\n• Мирадан жеке ұсыныстар\n• Куәлік\n• 2 ай — 10 жүргізу сабағы\n• Медосмотр қосылған",
+      "is_active": true
+    }
+  },
+  {
+    "model": "catalog.instructor",
+    "pk": 1,
+    "fields": {
+      "city": 1,
+      "display_name": "Конысов Бекали",
+      "gender": "M",
+      "gearbox": "AT",
+      "rating": "4.8",
+      "bio_ru": "Опытный инструктор с большим стажем работы",
+      "bio_kz": "Үлкен тәжірибесі бар тәжірибелі нұсқаушы",
+      "whatsapp_phone": "87001234567",
+      "is_active": true,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z",
+      "categories": [3, 5]
+    }
+  },
+  {
+    "model": "catalog.instructor",
+    "pk": 2,
+    "fields": {
+      "city": 1,
+      "display_name": "Салтанат Омирбай",
+      "gender": "F",
+      "gearbox": "AT",
+      "rating": "4.7",
+      "bio_ru": "Профессиональный инструктор по вождению",
+      "bio_kz": "Кәсіби жүргізу нұсқаушысы",
+      "whatsapp_phone": "87001234568",
+      "is_active": true,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z",
+      "categories": [3]
+    }
+  },
+  {
+    "model": "catalog.instructor",
+    "pk": 3,
+    "fields": {
+      "city": 1,
+      "display_name": "Гульжан Т.",
+      "gender": "F",
+      "gearbox": "AT",
+      "rating": "4.6",
+      "bio_ru": "Инструктор с индивидуальным подходом",
+      "bio_kz": "Жеке тәсілмен жұмыс істейтін нұсқаушы",
+      "whatsapp_phone": "87001234569",
+      "is_active": true,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z",
+      "categories": [3]
+    }
+  },
+  {
+    "model": "catalog.instructor",
+    "pk": 4,
+    "fields": {
+      "city": 1,
+      "display_name": "Мира У.",
+      "gender": "F",
+      "gearbox": "AT",
+      "rating": "4.9",
+      "bio_ru": "Ведущий инструктор с авторской методикой",
+      "bio_kz": "Авторлық әдістемесі бар жетекші нұсқаушы",
+      "whatsapp_phone": "87001234570",
+      "is_active": true,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z",
+      "categories": [3, 4, 6, 8]
+    }
+  },
+  {
+    "model": "catalog.instructortariff",
+    "pk": 1,
+    "fields": {
+      "instructor": 1,
+      "tariff_type": "SINGLE_HOUR",
+      "price_kzt": 8000,
+      "name_ru": null,
+      "name_kz": null,
+      "is_active": true,
+      "sort_order": 1,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "catalog.instructortariff",
+    "pk": 2,
+    "fields": {
+      "instructor": 1,
+      "tariff_type": "AUTODROM",
+      "price_kzt": 4000,
+      "name_ru": null,
+      "name_kz": null,
+      "is_active": true,
+      "sort_order": 2,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "catalog.instructortariff",
+    "pk": 3,
+    "fields": {
+      "instructor": 1,
+      "tariff_type": "PACKAGE_5",
+      "price_kzt": 40000,
+      "name_ru": "Уверенный старт",
+      "name_kz": "Сенімді бастау",
+      "is_active": true,
+      "sort_order": 3,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "catalog.instructortariff",
+    "pk": 4,
+    "fields": {
+      "instructor": 1,
+      "tariff_type": "PACKAGE_10",
+      "price_kzt": 70000,
+      "name_ru": "Свободное вождение",
+      "name_kz": "Еркін жүргізу",
+      "is_active": true,
+      "sort_order": 4,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "catalog.instructortariff",
+    "pk": 5,
+    "fields": {
+      "instructor": 1,
+      "tariff_type": "PACKAGE_15",
+      "price_kzt": 100000,
+      "name_ru": "Полный контроль",
+      "name_kz": "Толық бақылау",
+      "is_active": true,
+      "sort_order": 5,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "catalog.instructortariff",
+    "pk": 6,
+    "fields": {
+      "instructor": 2,
+      "tariff_type": "SINGLE_HOUR",
+      "price_kzt": 7000,
+      "name_ru": null,
+      "name_kz": null,
+      "is_active": true,
+      "sort_order": 1,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "catalog.instructortariff",
+    "pk": 7,
+    "fields": {
+      "instructor": 2,
+      "tariff_type": "AUTODROM",
+      "price_kzt": 4000,
+      "name_ru": null,
+      "name_kz": null,
+      "is_active": true,
+      "sort_order": 2,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "catalog.instructortariff",
+    "pk": 8,
+    "fields": {
+      "instructor": 2,
+      "tariff_type": "PACKAGE_5",
+      "price_kzt": 35000,
+      "name_ru": "Уверенный старт",
+      "name_kz": "Сенімді бастау",
+      "is_active": true,
+      "sort_order": 3,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "catalog.instructortariff",
+    "pk": 9,
+    "fields": {
+      "instructor": 2,
+      "tariff_type": "PACKAGE_10",
+      "price_kzt": 60000,
+      "name_ru": "Свободное вождение",
+      "name_kz": "Еркін жүргізу",
+      "is_active": true,
+      "sort_order": 4,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "catalog.instructortariff",
+    "pk": 10,
+    "fields": {
+      "instructor": 2,
+      "tariff_type": "PACKAGE_15",
+      "price_kzt": 100000,
+      "name_ru": "Полный контроль",
+      "name_kz": "Толық бақылау",
+      "is_active": true,
+      "sort_order": 5,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "catalog.instructortariff",
+    "pk": 11,
+    "fields": {
+      "instructor": 3,
+      "tariff_type": "SINGLE_HOUR",
+      "price_kzt": 7000,
+      "name_ru": null,
+      "name_kz": null,
+      "is_active": true,
+      "sort_order": 1,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "catalog.instructortariff",
+    "pk": 12,
+    "fields": {
+      "instructor": 3,
+      "tariff_type": "AUTODROM",
+      "price_kzt": 4000,
+      "name_ru": null,
+      "name_kz": null,
+      "is_active": true,
+      "sort_order": 2,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "catalog.instructortariff",
+    "pk": 13,
+    "fields": {
+      "instructor": 3,
+      "tariff_type": "PACKAGE_5",
+      "price_kzt": 30000,
+      "name_ru": "Уверенный старт",
+      "name_kz": "Сенімді бастау",
+      "is_active": true,
+      "sort_order": 3,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "catalog.instructortariff",
+    "pk": 14,
+    "fields": {
+      "instructor": 3,
+      "tariff_type": "PACKAGE_10",
+      "price_kzt": 50000,
+      "name_ru": "Свободное вождение",
+      "name_kz": "Еркін жүргізу",
+      "is_active": true,
+      "sort_order": 4,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "catalog.instructortariff",
+    "pk": 15,
+    "fields": {
+      "instructor": 3,
+      "tariff_type": "PACKAGE_15",
+      "price_kzt": 80000,
+      "name_ru": "Полный контроль",
+      "name_kz": "Толық бақылау",
+      "is_active": true,
+      "sort_order": 5,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "catalog.instructortariff",
+    "pk": 16,
+    "fields": {
+      "instructor": 4,
+      "tariff_type": "SINGLE_HOUR",
+      "price_kzt": 10000,
+      "name_ru": null,
+      "name_kz": null,
+      "is_active": true,
+      "sort_order": 1,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "catalog.instructortariff",
+    "pk": 17,
+    "fields": {
+      "instructor": 4,
+      "tariff_type": "AUTODROM",
+      "price_kzt": 5000,
+      "name_ru": null,
+      "name_kz": null,
+      "is_active": true,
+      "sort_order": 2,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "catalog.instructortariff",
+    "pk": 18,
+    "fields": {
+      "instructor": 4,
+      "tariff_type": "PACKAGE_5",
+      "price_kzt": 45000,
+      "name_ru": "Уверенный старт",
+      "name_kz": "Сенімді бастау",
+      "is_active": true,
+      "sort_order": 3,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "catalog.instructortariff",
+    "pk": 19,
+    "fields": {
+      "instructor": 4,
+      "tariff_type": "PACKAGE_10",
+      "price_kzt": 80000,
+      "name_ru": "Свободное вождение",
+      "name_kz": "Еркін жүргізу",
+      "is_active": true,
+      "sort_order": 4,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "catalog.instructortariff",
+    "pk": 20,
+    "fields": {
+      "instructor": 4,
+      "tariff_type": "PACKAGE_15",
+      "price_kzt": 112500,
+      "name_ru": "Полный контроль",
+      "name_kz": "Толық бақылау",
+      "is_active": true,
+      "sort_order": 5,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  }
+]

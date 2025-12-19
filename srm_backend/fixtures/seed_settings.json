@@ -1,0 +1,80 @@
+[
+  {
+    "model": "settings_app.projectsetting",
+    "pk": 1,
+    "fields": {
+      "key": "TESTS_PRICE_KZT",
+      "value_json": 8000,
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "settings_app.projectsetting",
+    "pk": 2,
+    "fields": {
+      "key": "OWNER_WHATSAPP_PHONE",
+      "value_json": "87026953357",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "settings_app.whatsapptemplate",
+    "pk": 1,
+    "fields": {
+      "scope": "SCHOOL_CLIENT_MESSAGE",
+      "language": "RU",
+      "template_text": "Уважаемый(-ая), будущий водитель!\nВы выбрали автошколу {school_name}\n📅 Начало группы: {intake_date}\n📍 Адрес: {address}\n💰 Цена: {tariff_name} {tariff_price} KZT\n\nУ вас есть дополнительные вопросы\nили вы готовы перейти к оплате?",
+      "is_active": true
+    }
+  },
+  {
+    "model": "settings_app.whatsapptemplate",
+    "pk": 2,
+    "fields": {
+      "scope": "SCHOOL_CLIENT_MESSAGE",
+      "language": "KZ",
+      "template_text": "Құрметті болашақ жүргізуші!\nСіз {school_name} таңдадыңыз\n📅 Топтың басталу күні: {intake_date}\n📍 Мекенжайы: {address}\n💰 Бағасы: {tariff_name} {tariff_price} KZT\n\nҚосымша сұрақтарыңыз бар ма\nәлде төлем жасауға дайынсыз ба?",
+      "is_active": true
+    }
+  },
+  {
+    "model": "settings_app.whatsapptemplate",
+    "pk": 3,
+    "fields": {
+      "scope": "INSTRUCTOR_CLIENT_MESSAGE",
+      "language": "RU",
+      "template_text": "Уважаемый(-ая) клиент!\nВы выбрали инструктора {instructor_name}\n⚙️ КПП: {gearbox}\n💰 Тариф: {tariff_name} {tariff_price} KZT\n\nГотовы записаться на занятие?",
+      "is_active": true
+    }
+  },
+  {
+    "model": "settings_app.whatsapptemplate",
+    "pk": 4,
+    "fields": {
+      "scope": "INSTRUCTOR_CLIENT_MESSAGE",
+      "language": "KZ",
+      "template_text": "Құрметті клиент!\nСіз {instructor_name} нұсқаушысын таңдадыңыз\n⚙️ КПП: {gearbox}\n💰 Тариф: {tariff_name} {tariff_price} KZT\n\nСабаққа жазылуға дайынсыз ба?",
+      "is_active": true
+    }
+  },
+  {
+    "model": "settings_app.whatsapptemplate",
+    "pk": 5,
+    "fields": {
+      "scope": "TESTS_OWNER_MESSAGE",
+      "language": "RU",
+      "template_text": "📘 Новая заявка — Тесты по ПДД\n\n👤 Имя: {name}\n🆔 ИИН: {iin}\n💬 WhatsApp: {whatsapp}\n📗 Категория: {category}\n🌐 Язык: {language}",
+      "is_active": true
+    }
+  },
+  {
+    "model": "settings_app.whatsapptemplate",
+    "pk": 6,
+    "fields": {
+      "scope": "TESTS_OWNER_MESSAGE",
+      "language": "KZ",
+      "template_text": "📘 Жаңа өтінім — ЖҚД тесттері\n\n👤 Аты: {name}\n🆔 ЖСН: {iin}\n💬 WhatsApp: {whatsapp}\n📗 Санат: {category}\n🌐 Тіл: {language}",
+      "is_active": true
+    }
+  }
+]

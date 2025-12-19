@@ -1,0 +1,238 @@
+{% extends "srm_ui/base.html" %}
+
+{% block title %}Лиды - AvtoMat SRM{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Лиды (всего: {{ total_count }})</h2>
+    <div>
+        <a href="{% url 'srm_ui:lead_list' %}?export=csv" class="btn btn-success">Экспорт CSV</a>
+        <a href="{% url 'srm_ui:lead_list' %}?export=excel" class="btn btn-success">Экспорт Excel</a>
+    </div>
+</div>
+
+<!-- Фильтры -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Фильтры</h5>
+    </div>
+    <div class="card-body">
+        <form method="get" id="filterForm">
+            <div class="row g-3 mb-3">
+                <div class="col-md-2">
+                    <label class="form-label">Статус</label>
+                    <div class="form-check">
+                        {% for value, label in form.status.field.choices %}
+                            {% if value %}
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="status" value="{{ value }}" id="status_{{ value }}"
+                                    {% if value in form.status.value %}checked{% endif %}>
+                                <label class="form-check-label" for="status_{{ value }}">
+                                    {{ label }}
+                                </label>
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Тип</label>
+                    {{ form.type }}
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Город</label>
+                    {{ form.city }}
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Категория</label>
+                    {{ form.category }}
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Автошкола</label>
+                    {{ form.school }}
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Инструктор</label>
+                    {{ form.instructor }}
+                </div>
+            </div>
+            <div class="row g-3 mb-3">
+                <div class="col-md-2">
+                    <label class="form-label">Язык</label>
+                    {{ form.language }}
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Источник</label>
+                    {{ form.source }}
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Поиск</label>
+                    {{ form.search }}
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Дата от</label>
+                    {{ form.created_from }}
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Дата до</label>
+                    {{ form.created_to }}
+                </div>
+                <div class="col-md-1 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">Применить</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Таблица лидов -->
+<div class="table-responsive">
+    <table class="table table-striped table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>
+                    <input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)">
+                </th>
+                <th>ID</th>
+                <th>Тип</th>
+                <th>Статус</th>
+                <th>Имя</th>
+                <th>Телефон</th>
+                <th>Дата создания</th>
+                <th>Действия</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for lead in page_obj %}
+            <tr>
+                <td>
+                    <input type="checkbox" class="lead-checkbox" value="{{ lead.id }}" onchange="updateBulkActions()">
+                </td>
+                <td><small>{{ lead.id|truncatechars:8 }}</small></td>
+                <td>
+                    <span class="badge bg-info">{{ lead.get_type_display }}</span>
+                </td>
+                <td>
+                    {% if lead.status == "NEW" %}
+                        <span class="badge bg-warning">{{ lead.get_status_display }}</span>
+                    {% elif lead.status == "CONFIRMED" %}
+                        <span class="badge bg-primary">{{ lead.get_status_display }}</span>
+                    {% elif lead.status == "PAID" %}
+                        <span class="badge bg-success">{{ lead.get_status_display }}</span>
+                    {% elif lead.status == "DONE" %}
+                        <span class="badge bg-dark">{{ lead.get_status_display }}</span>
+                    {% elif lead.status == "CANCELED" %}
+                        <span class="badge bg-danger">{{ lead.get_status_display }}</span>
+                    {% else %}
+                        <span class="badge bg-secondary">{{ lead.get_status_display }}</span>
+                    {% endif %}
+                </td>
+                <td>{{ lead.name }}</td>
+                <td>{{ lead.phone }}</td>
+                <td>{{ lead.created_at|date:"d.m.Y H:i" }}</td>
+                <td>
+                    <a href="{% url 'srm_ui:lead_detail' lead.id %}" class="btn btn-sm btn-outline-primary">Просмотр</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="8" class="text-center">Лиды не найдены</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Панель массовых действий -->
+<div id="bulkActionsPanel" class="card mb-3" style="display: none;">
+    <div class="card-body">
+        <div class="d-flex align-items-center flex-wrap">
+            <span class="me-3">Выбрано: <strong id="selectedCount">0</strong></span>
+            <form method="post" action="{% url 'srm_ui:bulk_action' %}" class="d-inline-flex align-items-center flex-wrap" id="bulkActionForm">
+                {% csrf_token %}
+                <input type="hidden" name="lead_ids" id="selectedLeadIds" value="">
+                <select name="new_status" class="form-select form-select-sm me-2" style="width: auto;">
+                    <option value="">Выберите статус</option>
+                    <option value="NEW">Новая</option>
+                    <option value="CONFIRMED">Подтверждена</option>
+                    <option value="PAID">Оплачено</option>
+                    <option value="DONE">Завершено</option>
+                    <option value="CANCELED">Отменено</option>
+                </select>
+                <button type="submit" name="action" value="change_status" class="btn btn-sm btn-primary me-2">Изменить статус</button>
+                <input type="text" name="payment_link" placeholder="Ссылка на оплату" class="form-control form-control-sm me-2" style="width: 200px;">
+                <button type="submit" name="action" value="add_payment_link" class="btn btn-sm btn-success me-2">Добавить ссылку</button>
+                <button type="submit" name="action" value="export_selected" class="btn btn-sm btn-info me-2">Экспорт выбранных</button>
+                <button type="button" class="btn btn-sm btn-secondary" onclick="clearSelection()">Снять выбор</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Пагинация -->
+{% if page_obj.has_other_pages %}
+<nav aria-label="Page navigation">
+    <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page=1{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.type %}&type={{ request.GET.type }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">Первая</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.type %}&type={{ request.GET.type }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">Предыдущая</a>
+            </li>
+        {% endif %}
+        
+        <li class="page-item active">
+            <span class="page-link">Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}</span>
+        </li>
+        
+        {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.type %}&type={{ request.GET.type }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">Следующая</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.type %}&type={{ request.GET.type }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">Последняя</a>
+            </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+<script>
+function toggleSelectAll(checkbox) {
+    const checkboxes = document.querySelectorAll('.lead-checkbox');
+    checkboxes.forEach(cb => cb.checked = checkbox.checked);
+    updateBulkActions();
+}
+
+function updateBulkActions() {
+    const checkboxes = document.querySelectorAll('.lead-checkbox:checked');
+    const count = checkboxes.length;
+    const panel = document.getElementById('bulkActionsPanel');
+    const countSpan = document.getElementById('selectedCount');
+    const idsInput = document.getElementById('selectedLeadIds');
+    
+    if (count > 0) {
+        panel.style.display = 'block';
+        countSpan.textContent = count;
+        idsInput.value = Array.from(checkboxes).map(cb => cb.value).join(',');
+    } else {
+        panel.style.display = 'none';
+        idsInput.value = '';
+    }
+}
+
+function clearSelection() {
+    const checkboxes = document.querySelectorAll('.lead-checkbox');
+    checkboxes.forEach(cb => cb.checked = false);
+    document.getElementById('selectAll').checked = false;
+    updateBulkActions();
+}
+
+// Инициализация при загрузке
+document.addEventListener('DOMContentLoaded', function() {
+    updateBulkActions();
+});
+</script>
+{% endblock %}
+

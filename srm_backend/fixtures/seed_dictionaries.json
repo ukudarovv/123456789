@@ -1,0 +1,173 @@
+[
+  {
+    "model": "dictionaries.city",
+    "pk": 1,
+    "fields": {
+      "name_ru": "Атырау",
+      "name_kz": "Атырау",
+      "is_active": true,
+      "sort_order": 1
+    }
+  },
+  {
+    "model": "dictionaries.city",
+    "pk": 2,
+    "fields": {
+      "name_ru": "Кульсары",
+      "name_kz": "Құлсары",
+      "is_active": true,
+      "sort_order": 2
+    }
+  },
+  {
+    "model": "dictionaries.category",
+    "pk": 1,
+    "fields": {
+      "code": "A",
+      "name_ru": "Категория A",
+      "name_kz": "Санат A",
+      "is_active": true,
+      "sort_order": 1
+    }
+  },
+  {
+    "model": "dictionaries.category",
+    "pk": 2,
+    "fields": {
+      "code": "A1",
+      "name_ru": "Категория A1",
+      "name_kz": "Санат A1",
+      "is_active": true,
+      "sort_order": 2
+    }
+  },
+  {
+    "model": "dictionaries.category",
+    "pk": 3,
+    "fields": {
+      "code": "B",
+      "name_ru": "Категория B",
+      "name_kz": "Санат B",
+      "is_active": true,
+      "sort_order": 3
+    }
+  },
+  {
+    "model": "dictionaries.category",
+    "pk": 4,
+    "fields": {
+      "code": "B1",
+      "name_ru": "Категория B1",
+      "name_kz": "Санат B1",
+      "is_active": true,
+      "sort_order": 4
+    }
+  },
+  {
+    "model": "dictionaries.category",
+    "pk": 5,
+    "fields": {
+      "code": "C",
+      "name_ru": "Категория C",
+      "name_kz": "Санат C",
+      "is_active": true,
+      "sort_order": 5
+    }
+  },
+  {
+    "model": "dictionaries.category",
+    "pk": 6,
+    "fields": {
+      "code": "C1",
+      "name_ru": "Категория C1",
+      "name_kz": "Санат C1",
+      "is_active": true,
+      "sort_order": 6
+    }
+  },
+  {
+    "model": "dictionaries.category",
+    "pk": 7,
+    "fields": {
+      "code": "D",
+      "name_ru": "Категория D",
+      "name_kz": "Санат D",
+      "is_active": true,
+      "sort_order": 7
+    }
+  },
+  {
+    "model": "dictionaries.category",
+    "pk": 8,
+    "fields": {
+      "code": "D1",
+      "name_ru": "Категория D1",
+      "name_kz": "Санат D1",
+      "is_active": true,
+      "sort_order": 8
+    }
+  },
+  {
+    "model": "dictionaries.tariffplan",
+    "pk": 1,
+    "fields": {
+      "code": "BASIC",
+      "name_ru": "Базовый",
+      "name_kz": "Негізгі",
+      "sort_order": 1,
+      "is_active": true
+    }
+  },
+  {
+    "model": "dictionaries.tariffplan",
+    "pk": 2,
+    "fields": {
+      "code": "EXPRESS",
+      "name_ru": "Экспресс",
+      "name_kz": "Экспресс",
+      "sort_order": 2,
+      "is_active": true
+    }
+  },
+  {
+    "model": "dictionaries.tariffplan",
+    "pk": 3,
+    "fields": {
+      "code": "PREMIUM",
+      "name_ru": "Премиум",
+      "name_kz": "Премиум",
+      "sort_order": 3,
+      "is_active": true
+    }
+  },
+  {
+    "model": "dictionaries.trainingformat",
+    "pk": 1,
+    "fields": {
+      "name_ru": "Онлайн",
+      "name_kz": "Онлайн",
+      "is_active": true,
+      "sort_order": 1
+    }
+  },
+  {
+    "model": "dictionaries.trainingformat",
+    "pk": 2,
+    "fields": {
+      "name_ru": "Оффлайн",
+      "name_kz": "Офлайн",
+      "is_active": true,
+      "sort_order": 2
+    }
+  },
+  {
+    "model": "dictionaries.trainingformat",
+    "pk": 3,
+    "fields": {
+      "name_ru": "Гибрид",
+      "name_kz": "Гибрид",
+      "is_active": true,
+      "sort_order": 3
+    }
+  }
+]
