@@ -1,4 +1,6 @@
 import asyncio
+import signal
+import logging
 
 from aiogram import Bot, Dispatcher, Router, F
 from aiogram.client.default import DefaultBotProperties
@@ -14,6 +16,8 @@ from keyboards.common import main_menu, language_keyboard
 from handlers import tests_flow, schools_flow, instructors_flow, language_flow, certificate_flow
 from services.analytics import send_event
 from states_language import LanguageFlow
+
+logger = logging.getLogger(__name__)
 
 
 async def get_user_language(message: Message, state: FSMContext) -> str:
@@ -114,9 +118,53 @@ async def main():
     dp.include_router(instructors_flow.router)
     dp.include_router(root_router)  # Общие обработчики в конце
 
-    await dp.start_polling(bot)
+    # Обработка сигналов для graceful shutdown
+    shutdown_event = asyncio.Event()
+
+    def signal_handler(signum, frame):
+        logger.info(f"Received signal {signum}, shutting down gracefully...")
+        shutdown_event.set()
+
+    # Регистрируем обработчики сигналов
+    signal.signal(signal.SIGTERM, signal_handler)
+    signal.signal(signal.SIGINT, signal_handler)
+
+    try:
+        # Запускаем polling в фоне и ждем сигнала завершения
+        polling_task = asyncio.create_task(dp.start_polling(bot))
+        
+        # Ждем сигнала завершения
+        await shutdown_event.wait()
+        
+        # Останавливаем polling
+        logger.info("Stopping polling...")
+        await dp.stop_polling()
+        polling_task.cancel()
+        
+        try:
+            await polling_task
+        except asyncio.CancelledError:
+            pass
+            
+    except Exception as e:
+        logger.error(f"Error in polling: {e}", exc_info=True)
+        raise
+    finally:
+        await bot.session.close()
+        logger.info("Bot stopped")
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    # Настройка логирования
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    )
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        logger.info("Bot stopped by user")
+    except Exception as e:
+        logger.error(f"Fatal error: {e}", exc_info=True)
+        raise
 
