@@ -2,10 +2,22 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-# Загружаем переменные окружения из .env файла
-load_dotenv()
-
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Загружаем переменные окружения из .env файла
+# Пробуем загрузить из разных возможных мест
+env_paths = [
+    BASE_DIR / ".env",
+    BASE_DIR.parent / ".env",
+    Path.home() / ".env",
+]
+for env_path in env_paths:
+    if env_path.exists():
+        load_dotenv(env_path)
+        break
+else:
+    # Если .env не найден, пробуем загрузить из текущей директории
+    load_dotenv()
 
 SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key")
 DEBUG = os.getenv("DEBUG", "true").lower() == "true"
