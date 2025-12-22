@@ -568,17 +568,17 @@ async def instructors_view_pricing(message: Message, state: FSMContext):
         name = name_kz if lang == "KZ" else name_ru
         
         if tariff_type == 'SINGLE_HOUR':
-            label = f"{t('tariff_single_hour', lang)} — {price:,} ₸"
+            label = t('tariff_single_hour', lang)
         elif tariff_type == 'AUTODROM':
-            label = f"{t('tariff_autodrom', lang)} — {price:,} ₸"
+            label = t('tariff_autodrom', lang)
         elif tariff_type == 'PACKAGE_5':
-            label = f"{t('tariff_package_5', lang)} — {price:,} ₸"
+            label = t('tariff_package_5', lang)
         elif tariff_type == 'PACKAGE_10':
-            label = f"{t('tariff_package_10', lang)} — {price:,} ₸"
+            label = t('tariff_package_10', lang)
         elif tariff_type == 'PACKAGE_15':
-            label = f"{t('tariff_package_15', lang)} — {price:,} ₸"
+            label = t('tariff_package_15', lang)
         else:
-            label = f"{tariff_type} — {price:,} ₸"
+            label = tariff_type
         
         tariff_options.append(f"{tariff_item.get('id')}: {label}")
     
@@ -654,17 +654,17 @@ async def instructors_choose_tariff(message: Message, state: FSMContext):
                 name = name_kz if lang == "KZ" else name_ru
                 
                 if tariff_type == 'SINGLE_HOUR':
-                    label = f"{t('tariff_single_hour', lang)} — {price:,} ₸"
+                    label = t('tariff_single_hour', lang)
                 elif tariff_type == 'AUTODROM':
-                    label = f"{t('tariff_autodrom', lang)} — {price:,} ₸"
+                    label = t('tariff_autodrom', lang)
                 elif tariff_type == 'PACKAGE_5':
-                    label = f"{t('tariff_package_5', lang)} — {price:,} ₸"
+                    label = t('tariff_package_5', lang)
                 elif tariff_type == 'PACKAGE_10':
-                    label = f"{t('tariff_package_10', lang)} — {price:,} ₸"
+                    label = t('tariff_package_10', lang)
                 elif tariff_type == 'PACKAGE_15':
-                    label = f"{t('tariff_package_15', lang)} — {price:,} ₸"
+                    label = t('tariff_package_15', lang)
                 else:
-                    label = f"{tariff_type} — {price:,} ₸"
+                    label = tariff_type
                 
                 tariff_options.append(f"{tariff_item.get('id')}: {label}")
             
@@ -703,17 +703,17 @@ async def instructors_choose_tariff(message: Message, state: FSMContext):
             price = tariff_item.get('price_kzt', 0)
             
             if tariff_type == 'SINGLE_HOUR':
-                label = f"{t('tariff_single_hour', lang)} — {price:,} ₸"
+                label = t('tariff_single_hour', lang)
             elif tariff_type == 'AUTODROM':
-                label = f"{t('tariff_autodrom', lang)} — {price:,} ₸"
+                label = t('tariff_autodrom', lang)
             elif tariff_type == 'PACKAGE_5':
-                label = f"{t('tariff_package_5', lang)} — {price:,} ₸"
+                label = t('tariff_package_5', lang)
             elif tariff_type == 'PACKAGE_10':
-                label = f"{t('tariff_package_10', lang)} — {price:,} ₸"
+                label = t('tariff_package_10', lang)
             elif tariff_type == 'PACKAGE_15':
-                label = f"{t('tariff_package_15', lang)} — {price:,} ₸"
+                label = t('tariff_package_15', lang)
             else:
-                label = f"{tariff_type} — {price:,} ₸"
+                label = tariff_type
             
             tariff_options.append(f"{tariff_item.get('id')}: {label}")
         
@@ -752,13 +752,25 @@ async def instructors_choose_tariff(message: Message, state: FSMContext):
         tariff_label = f"{tariff_type} — {price:,} ₸"
     
     await message.answer(f"✅ {t('instructor_select_tariff', lang)}: {tariff_label} — {price:,} ₸")
-    await send_event("lead_form_opened", {"step": "name", "flow": "instructors"}, bot_user_id=message.from_user.id)
-    await state.set_state(InstructorFlow.name)
-    await message.answer(t("enter_name", lang), reply_markup=back_keyboard(lang))
+    await send_event("lead_form_opened", {"step": "preferred_time", "flow": "instructors"}, bot_user_id=message.from_user.id)
+    await state.set_state(InstructorFlow.preferred_time)
+    
+    # Формируем клавиатуру для выбора времени
+    from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+    time_keyboard = ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text=t("preferred_time_morning", lang))],
+            [KeyboardButton(text=t("preferred_time_day", lang))],
+            [KeyboardButton(text=t("preferred_time_evening", lang))],
+            [KeyboardButton(text=t("back", lang)), KeyboardButton(text=t("main_menu", lang))],
+        ],
+        resize_keyboard=True,
+    )
+    await message.answer(t("preferred_time_question", lang), reply_markup=time_keyboard)
 
 
-@router.message(InstructorFlow.name)
-async def instructors_name(message: Message, state: FSMContext):
+@router.message(InstructorFlow.preferred_time)
+async def instructors_preferred_time(message: Message, state: FSMContext):
     lang = await get_language(state)
     if is_main_menu(message.text, lang):
         await state.clear()
@@ -773,20 +785,19 @@ async def instructors_name(message: Message, state: FSMContext):
             tariff_options = []
             for tariff_item in sorted(tariffs, key=lambda x: x.get('sort_order', 0)):
                 tariff_type = tariff_item.get('tariff_type')
-                price = tariff_item.get('price_kzt', 0)
                 
                 if tariff_type == 'SINGLE_HOUR':
-                    label = f"{t('tariff_single_hour', lang)} — {price:,} ₸"
+                    label = t('tariff_single_hour', lang)
                 elif tariff_type == 'AUTODROM':
-                    label = f"{t('tariff_autodrom', lang)} — {price:,} ₸"
+                    label = t('tariff_autodrom', lang)
                 elif tariff_type == 'PACKAGE_5':
-                    label = f"{t('tariff_package_5', lang)} — {price:,} ₸"
+                    label = t('tariff_package_5', lang)
                 elif tariff_type == 'PACKAGE_10':
-                    label = f"{t('tariff_package_10', lang)} — {price:,} ₸"
+                    label = t('tariff_package_10', lang)
                 elif tariff_type == 'PACKAGE_15':
-                    label = f"{t('tariff_package_15', lang)} — {price:,} ₸"
+                    label = t('tariff_package_15', lang)
                 else:
-                    label = f"{tariff_type} — {price:,} ₸"
+                    label = tariff_type
                 
                 tariff_options.append(f"{tariff_item.get('id')}: {label}")
             
@@ -804,6 +815,127 @@ async def instructors_name(message: Message, state: FSMContext):
         else:
             await state.clear()
             await message.answer(t("main_menu", lang), reply_markup=main_menu(lang))
+        return
+    
+    # Проверяем выбор времени
+    text = message.text or ""
+    preferred_time = None
+    
+    if t("preferred_time_morning", lang) in text or "утро" in text.lower() or "таңертең" in text.lower():
+        preferred_time = "MORNING"
+    elif t("preferred_time_day", lang) in text or "днём" in text.lower() or "күндіз" in text.lower():
+        preferred_time = "DAY"
+    elif t("preferred_time_evening", lang) in text or "вечером" in text.lower() or "кешке" in text.lower():
+        preferred_time = "EVENING"
+    
+    if not preferred_time:
+        # Неверный выбор - показываем снова
+        from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+        time_keyboard = ReplyKeyboardMarkup(
+            keyboard=[
+                [KeyboardButton(text=t("preferred_time_morning", lang))],
+                [KeyboardButton(text=t("preferred_time_day", lang))],
+                [KeyboardButton(text=t("preferred_time_evening", lang))],
+                [KeyboardButton(text=t("back", lang)), KeyboardButton(text=t("main_menu", lang))],
+            ],
+            resize_keyboard=True,
+        )
+        await message.answer(t("preferred_time_question", lang), reply_markup=time_keyboard)
+        return
+    
+    await state.update_data(preferred_time=preferred_time)
+    await state.set_state(InstructorFlow.training_period)
+    
+    # Формируем клавиатуру для выбора периода обучения
+    from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+    period_keyboard = ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text=t("training_period_10_days", lang))],
+            [KeyboardButton(text=t("training_period_month", lang))],
+            [KeyboardButton(text=t("training_period_no_matter", lang))],
+            [KeyboardButton(text=t("back", lang)), KeyboardButton(text=t("main_menu", lang))],
+        ],
+        resize_keyboard=True,
+    )
+    await message.answer(t("training_period_question", lang), reply_markup=period_keyboard)
+
+
+@router.message(InstructorFlow.training_period)
+async def instructors_training_period(message: Message, state: FSMContext):
+    lang = await get_language(state)
+    if is_main_menu(message.text, lang):
+        await state.clear()
+        await message.answer(t("main_menu", lang), reply_markup=main_menu(lang))
+        return
+    if is_back(message.text, lang):
+        # Возврат к выбору времени
+        await state.set_state(InstructorFlow.preferred_time)
+        from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+        time_keyboard = ReplyKeyboardMarkup(
+            keyboard=[
+                [KeyboardButton(text=t("preferred_time_morning", lang))],
+                [KeyboardButton(text=t("preferred_time_day", lang))],
+                [KeyboardButton(text=t("preferred_time_evening", lang))],
+                [KeyboardButton(text=t("back", lang)), KeyboardButton(text=t("main_menu", lang))],
+            ],
+            resize_keyboard=True,
+        )
+        await message.answer(t("preferred_time_question", lang), reply_markup=time_keyboard)
+        return
+    
+    # Проверяем выбор периода
+    text = message.text or ""
+    training_period = None
+    
+    if t("training_period_10_days", lang) in text or "10 дней" in text.lower() or "10 күн" in text.lower():
+        training_period = "10_DAYS"
+    elif t("training_period_month", lang) in text or "месяц" in text.lower() or "ай" in text.lower():
+        training_period = "MONTH"
+    elif t("training_period_no_matter", lang) in text or "не имеет значения" in text.lower() or "маңызды емес" in text.lower():
+        training_period = "NO_MATTER"
+    
+    if not training_period:
+        # Неверный выбор - показываем снова
+        from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+        period_keyboard = ReplyKeyboardMarkup(
+            keyboard=[
+                [KeyboardButton(text=t("training_period_10_days", lang))],
+                [KeyboardButton(text=t("training_period_month", lang))],
+                [KeyboardButton(text=t("training_period_no_matter", lang))],
+                [KeyboardButton(text=t("back", lang)), KeyboardButton(text=t("main_menu", lang))],
+            ],
+            resize_keyboard=True,
+        )
+        await message.answer(t("training_period_question", lang), reply_markup=period_keyboard)
+        return
+    
+    await state.update_data(training_period=training_period)
+    await send_event("lead_form_opened", {"step": "name", "flow": "instructors"}, bot_user_id=message.from_user.id)
+    await state.set_state(InstructorFlow.name)
+    await message.answer(t("enter_name", lang), reply_markup=back_keyboard(lang))
+
+
+@router.message(InstructorFlow.name)
+async def instructors_name(message: Message, state: FSMContext):
+    lang = await get_language(state)
+    if is_main_menu(message.text, lang):
+        await state.clear()
+        await message.answer(t("main_menu", lang), reply_markup=main_menu(lang))
+        return
+    if is_back(message.text, lang):
+        # Возврат к выбору периода обучения
+        await state.set_state(InstructorFlow.training_period)
+        from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+        period_keyboard = ReplyKeyboardMarkup(
+            keyboard=[
+                [KeyboardButton(text=t("training_period_10_days", lang))],
+                [KeyboardButton(text=t("training_period_month", lang))],
+                [KeyboardButton(text=t("training_period_no_matter", lang))],
+                [KeyboardButton(text=t("back", lang)), KeyboardButton(text=t("main_menu", lang))],
+            ],
+            resize_keyboard=True,
+        )
+        await message.answer(t("training_period_question", lang), reply_markup=period_keyboard)
         return
     name = message.text.strip()
     if len(name) < 2:
@@ -878,6 +1010,28 @@ async def instructors_phone(message: Message, state: FSMContext):
     else:
         tariff_label = tariff_type
     
+    # Получаем выбранные предпочтения
+    preferred_time = data.get('preferred_time', '')
+    training_period = data.get('training_period', '')
+    
+    # Формируем текст для времени
+    preferred_time_text = ""
+    if preferred_time == "MORNING":
+        preferred_time_text = t("preferred_time_morning", lang)
+    elif preferred_time == "DAY":
+        preferred_time_text = t("preferred_time_day", lang)
+    elif preferred_time == "EVENING":
+        preferred_time_text = t("preferred_time_evening", lang)
+    
+    # Формируем текст для периода
+    training_period_text = ""
+    if training_period == "10_DAYS":
+        training_period_text = t("training_period_10_days", lang)
+    elif training_period == "MONTH":
+        training_period_text = t("training_period_month", lang)
+    elif training_period == "NO_MATTER":
+        training_period_text = t("training_period_no_matter", lang)
+    
     confirm_text_ru = (
         f"{t('confirm_data', lang)}\n\n"
         f"Город: {city_name}\n"
@@ -886,9 +1040,16 @@ async def instructors_phone(message: Message, state: FSMContext):
         f"Пол инструктора: {gender_text}\n"
         f"Инструктор: {instr['display_name']}\n"
         f"Тариф: {tariff_label} — {tariff_price:,} ₸\n"
+    )
+    if preferred_time_text:
+        confirm_text_ru += f"{t('preferred_time_label', lang)}: {preferred_time_text}\n"
+    if training_period_text:
+        confirm_text_ru += f"{t('training_period_label', lang)}: {training_period_text}\n"
+    confirm_text_ru += (
         f"Имя: {data['name']}\n"
         f"Телефон: {phone}"
     )
+    
     confirm_text_kz = (
         f"{t('confirm_data', lang)}\n\n"
         f"Қала: {city_name}\n"
@@ -897,6 +1058,12 @@ async def instructors_phone(message: Message, state: FSMContext):
         f"Нұсқаушының жынысы: {gender_text}\n"
         f"Нұсқаушы: {instr['display_name']}\n"
         f"Тариф: {tariff_label} — {tariff_price:,} ₸\n"
+    )
+    if preferred_time_text:
+        confirm_text_kz += f"{t('preferred_time_label', lang)}: {preferred_time_text}\n"
+    if training_period_text:
+        confirm_text_kz += f"{t('training_period_label', lang)}: {training_period_text}\n"
+    confirm_text_kz += (
         f"Аты: {data['name']}\n"
         f"Телефон: {phone}"
     )
@@ -930,6 +1097,8 @@ async def instructors_confirm(message: Message, state: FSMContext):
             "instructor_id": instr["id"],
             "instructor_tariff_id": data.get("selected_tariff_id"),
             "instructor_tariff_price_kzt": data.get("selected_tariff", {}).get("price_kzt"),
+            "preferred_time": data.get("preferred_time"),
+            "training_period": data.get("training_period"),
         },
     }
     try:
@@ -954,7 +1123,9 @@ async def instructors_confirm(message: Message, state: FSMContext):
     await message.answer(t("thank_you", lang), reply_markup=main_menu(lang))
     
     # Генерируем WhatsApp ссылку с шаблоном (автоматически открывается)
-    wa_link = build_wa_link_instructor(instr, data["name"], data["phone"], category_name, lang)
+    preferred_time = data.get("preferred_time", "")
+    training_period = data.get("training_period", "")
+    wa_link = build_wa_link_instructor(instr, data["name"], data["phone"], category_name, lang, preferred_time, training_period)
     if wa_link:
         await send_event("whatsapp_opened", {"flow": "instructors", "instructor_id": instr["id"]}, bot_user_id=message.from_user.id)
         # Отправляем ссылку для автоматического открытия WhatsApp
@@ -1006,6 +1177,46 @@ async def instructors_confirm_any(message: Message, state: FSMContext):
     
     gearbox_display = "⚙️ Автомат" if data['gearbox'] == "AT" else "⚙️ Механика"
     
+    # Получаем выбранный тариф
+    selected_tariff = data.get("selected_tariff", {})
+    tariff_type = selected_tariff.get('tariff_type', '')
+    tariff_price = selected_tariff.get('price_kzt', 0)
+    
+    if tariff_type == 'SINGLE_HOUR':
+        tariff_label = t('tariff_single_hour', lang)
+    elif tariff_type == 'AUTODROM':
+        tariff_label = t('tariff_autodrom', lang)
+    elif tariff_type == 'PACKAGE_5':
+        tariff_label = t('tariff_package_5', lang)
+    elif tariff_type == 'PACKAGE_10':
+        tariff_label = t('tariff_package_10', lang)
+    elif tariff_type == 'PACKAGE_15':
+        tariff_label = t('tariff_package_15', lang)
+    else:
+        tariff_label = tariff_type
+    
+    # Получаем выбранные предпочтения
+    preferred_time = data.get('preferred_time', '')
+    training_period = data.get('training_period', '')
+    
+    # Формируем текст для времени
+    preferred_time_text = ""
+    if preferred_time == "MORNING":
+        preferred_time_text = t("preferred_time_morning", lang)
+    elif preferred_time == "DAY":
+        preferred_time_text = t("preferred_time_day", lang)
+    elif preferred_time == "EVENING":
+        preferred_time_text = t("preferred_time_evening", lang)
+    
+    # Формируем текст для периода
+    training_period_text = ""
+    if training_period == "10_DAYS":
+        training_period_text = t("training_period_10_days", lang)
+    elif training_period == "MONTH":
+        training_period_text = t("training_period_month", lang)
+    elif training_period == "NO_MATTER":
+        training_period_text = t("training_period_no_matter", lang)
+    
     confirm_text_ru = (
         f"{t('confirm_data', lang)}\n\n"
         f"Город: {city_name}\n"
@@ -1014,16 +1225,30 @@ async def instructors_confirm_any(message: Message, state: FSMContext):
         f"Пол инструктора: {gender_text}\n"
         f"Инструктор: {instr['display_name']}\n"
         f"Тариф: {tariff_label} — {tariff_price:,} ₸\n"
+    )
+    if preferred_time_text:
+        confirm_text_ru += f"{t('preferred_time_label', lang)}: {preferred_time_text}\n"
+    if training_period_text:
+        confirm_text_ru += f"{t('training_period_label', lang)}: {training_period_text}\n"
+    confirm_text_ru += (
         f"Имя: {data['name']}\n"
         f"Телефон: {data['phone']}"
     )
+    
     confirm_text_kz = (
         f"{t('confirm_data', lang)}\n\n"
         f"Қала: {city_name}\n"
         f"Санат: {category_name}\n"
         f"КПП: {gearbox_display}\n"
         f"Нұсқаушының жынысы: {gender_text}\n"
-        f"Нұсқаушы: {instr['display_name']} ({instr['price_kzt']} KZT)\n"
+        f"Нұсқаушы: {instr['display_name']}\n"
+        f"Тариф: {tariff_label} — {tariff_price:,} ₸\n"
+    )
+    if preferred_time_text:
+        confirm_text_kz += f"{t('preferred_time_label', lang)}: {preferred_time_text}\n"
+    if training_period_text:
+        confirm_text_kz += f"{t('training_period_label', lang)}: {training_period_text}\n"
+    confirm_text_kz += (
         f"Аты: {data['name']}\n"
         f"Телефон: {data['phone']}"
     )

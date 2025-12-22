@@ -79,13 +79,34 @@ def build_wa_link_school(detail: dict, name: str, phone: str, tariff: dict, cate
     return f"https://wa.me/{owner_phone.replace('+', '')}?text={urllib.parse.quote(text)}"
 
 
-def build_wa_link_instructor(instructor_detail: dict, name: str, phone: str, category_name: str = "", lang: str = "RU") -> str:
+def build_wa_link_instructor(instructor_detail: dict, name: str, phone: str, category_name: str = "", lang: str = "RU", preferred_time: str = "", training_period: str = "") -> str:
     """Генерация WhatsApp ссылки с шаблоном для инструктора согласно ТЗ"""
     # Используем фиксированный номер согласно ТЗ
     owner_phone = WHATSAPP_SCHOOLS_INSTRUCTORS
     
     instructor_name = instructor_detail.get('display_name', '')
     service_name = "Инструктор" if lang == "RU" else "Нұсқаушы"
+    
+    # Импортируем функцию перевода
+    from i18n import t
+    
+    # Формируем текст для времени
+    preferred_time_text = ""
+    if preferred_time == "MORNING":
+        preferred_time_text = t("preferred_time_morning", lang)
+    elif preferred_time == "DAY":
+        preferred_time_text = t("preferred_time_day", lang)
+    elif preferred_time == "EVENING":
+        preferred_time_text = t("preferred_time_evening", lang)
+    
+    # Формируем текст для периода
+    training_period_text = ""
+    if training_period == "10_DAYS":
+        training_period_text = t("training_period_10_days", lang)
+    elif training_period == "MONTH":
+        training_period_text = t("training_period_month", lang)
+    elif training_period == "NO_MATTER":
+        training_period_text = t("training_period_no_matter", lang)
     
     # Новый шаблон согласно ТЗ
     if lang == "KZ":
@@ -98,6 +119,10 @@ def build_wa_link_instructor(instructor_detail: dict, name: str, phone: str, cat
         )
         if category_name:
             text += f"📗 Санат: {category_name}\n"
+        if preferred_time_text:
+            text += f"⏰ {t('preferred_time_label', lang)}: {preferred_time_text}\n"
+        if training_period_text:
+            text += f"📅 {t('training_period_label', lang)}: {training_period_text}\n"
         text += f"🌐 Тіл: KZ"
     else:
         text = (
@@ -109,6 +134,10 @@ def build_wa_link_instructor(instructor_detail: dict, name: str, phone: str, cat
         )
         if category_name:
             text += f"📗 Категория: {category_name}\n"
+        if preferred_time_text:
+            text += f"⏰ {t('preferred_time_label', lang)}: {preferred_time_text}\n"
+        if training_period_text:
+            text += f"📅 {t('training_period_label', lang)}: {training_period_text}\n"
         text += f"🌐 Язык: RU"
     
     return f"https://wa.me/{owner_phone.replace('+', '')}?text={urllib.parse.quote(text)}"

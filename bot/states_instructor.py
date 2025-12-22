@@ -9,6 +9,8 @@ class InstructorFlow(StatesGroup):
     instructor = State()
     instructor_card = State()  # Показ карточки инструктора с кнопкой "Выбрать тариф"
     tariff = State()  # Выбор тарифа инструктора (если есть несколько)
+    preferred_time = State()  # Удобное время занятий
+    training_period = State()  # Предпочтительный период обучения
     name = State()
     phone = State()
     confirm = State()
