@@ -48,6 +48,28 @@ def get_name_by_lang(item: dict, lang: str) -> str:
     return item.get("name_ru", item.get("name", {}).get("ru", ""))
 
 
+def format_choice_option(index: int, name: str) -> str:
+    """Форматировать опцию выбора - просто название без номера"""
+    # Убираем лишние пробелы из имени
+    return name.strip()
+
+
+def find_item_by_text(items: list, text: str, lang: str) -> dict:
+    """Найти элемент по тексту кнопки (точное совпадение или по имени)"""
+    text = text.strip()
+    # Ищем по точному совпадению имени
+    for item in items:
+        name = get_name_by_lang(item, lang).strip()
+        if text == name:
+            return item
+    # Если не нашли по точному совпадению, пробуем найти по частичному совпадению
+    for item in items:
+        name = get_name_by_lang(item, lang).strip()
+        if text in name or name in text:
+            return item
+    return None
+
+
 async def handle_api_error(error: Exception, lang: str, message: Message, state: FSMContext):
     """Обработать ошибку API и отправить понятное сообщение пользователю"""
     if isinstance(error, ApiClientError):
@@ -76,6 +98,9 @@ async def handle_main_menu(message: Message, state: FSMContext):
 @router.message(Command("instructors"))
 @router.message(F.text.in_(["Инструкторы", "Нұсқаушылар", "инструкторы"]))
 async def instructors_start(message: Message, state: FSMContext):
+    # Сохраняем main_intent перед очисткой, если он был установлен
+    data = await state.get_data()
+    main_intent = data.get("main_intent")
     # Очищаем текущее состояние перед началом нового потока
     await state.clear()
     lang = await get_language(state)
@@ -92,8 +117,12 @@ async def instructors_start(message: Message, state: FSMContext):
         await message.answer(t("no_cities", lang), reply_markup=main_menu(lang))
         return
     await state.set_state(InstructorFlow.city)
-    await state.update_data(cities=cities, language=lang)
-    opts = [f"{c['id']}: {get_name_by_lang(c, lang)}" for c in cities]
+    # Восстанавливаем main_intent, если он был установлен
+    update_data = {"cities": cities, "language": lang}
+    if main_intent:
+        update_data["main_intent"] = main_intent
+    await state.update_data(**update_data)
+    opts = [format_choice_option(i, get_name_by_lang(c, lang)) for i, c in enumerate(cities)]
     await message.answer(t("choose_city", lang), reply_markup=choices_keyboard(opts, lang))
 
 
@@ -111,14 +140,12 @@ async def instructors_choose_city(message: Message, state: FSMContext):
         return
     data = await state.get_data()
     cities = data.get("cities", [])
-    city_id = None
-    for c in cities:
-        if message.text.startswith(f"{c['id']}:"):
-            city_id = c["id"]
-            break
-    if not city_id:
-        await message.answer(t("choose_city", lang), reply_markup=choices_keyboard([f"{c['id']}: {get_name_by_lang(c, lang)}" for c in cities], lang))
+    selected_city = find_item_by_text(cities, message.text, lang)
+    if not selected_city:
+        opts = [format_choice_option(i, get_name_by_lang(c, lang)) for i, c in enumerate(cities)]
+        await message.answer(t("choose_city", lang), reply_markup=choices_keyboard(opts, lang))
         return
+    city_id = selected_city["id"]
     await send_event("city_selected", {"city_id": city_id}, bot_user_id=message.from_user.id)
     await state.update_data(city_id=city_id)
     
@@ -132,11 +159,14 @@ async def instructors_choose_city(message: Message, state: FSMContext):
         return
     await api.close()
     
-    # Фильтрация категорий: только B для потоков без CERT_NOT_PASSED intent
+    # Фильтрация категорий: только B для потока CERT_NOT_PASSED, для REFRESH показываем все категории
     data = await state.get_data()
     main_intent = data.get("main_intent")
-    if main_intent != "CERT_NOT_PASSED":
-        # Оставляем только категорию B
+    # Для потока CERT_NOT_PASSED показываем все категории
+    # Для потока REFRESH ("Записаться на вождение") тоже показываем все категории
+    # Фильтрация по B применяется только для других потоков (если такие есть)
+    if main_intent not in ["CERT_NOT_PASSED", "REFRESH"]:
+        # Оставляем только категорию B для других потоков
         categories = [c for c in categories if c.get('code') == 'B']
         if not categories:
             await message.answer("Категория B не найдена" if lang == "RU" else "B санаты табылмады", reply_markup=main_menu(lang))
@@ -144,7 +174,7 @@ async def instructors_choose_city(message: Message, state: FSMContext):
             return
     
     await state.update_data(categories=categories)
-    opts = [f"{c['id']}: {get_name_by_lang(c, lang)}" for c in categories]
+    opts = [format_choice_option(i, get_name_by_lang(c, lang)) for i, c in enumerate(categories)]
     await state.set_state(InstructorFlow.category)
     await message.answer(t("choose_category", lang), reply_markup=choices_keyboard(opts, lang))
 
@@ -163,7 +193,7 @@ async def instructors_choose_category(message: Message, state: FSMContext):
         cities = data.get("cities", [])
         if cities:
             await state.set_state(InstructorFlow.city)
-            opts = [f"{c['id']}: {get_name_by_lang(c, lang)}" for c in cities]
+            opts = [format_choice_option(i, get_name_by_lang(c, lang)) for i, c in enumerate(cities)]
             await message.answer(t("choose_city", lang), reply_markup=choices_keyboard(opts, lang))
         else:
             await state.clear()
@@ -172,25 +202,23 @@ async def instructors_choose_category(message: Message, state: FSMContext):
     
     data = await state.get_data()
     categories = data.get("categories", [])
-    category_id = None
-    category_name = ""
-    selected_category = None
-    for c in categories:
-        if message.text.startswith(f"{c['id']}:"):
-            category_id = c["id"]
-            category_name = get_name_by_lang(c, lang)
-            selected_category = c
-            break
-    if not category_id:
-        await message.answer(t("choose_category", lang), reply_markup=choices_keyboard([f"{c['id']}: {get_name_by_lang(c, lang)}" for c in categories], lang))
+    selected_category = find_item_by_text(categories, message.text, lang)
+    if not selected_category:
+        opts = [format_choice_option(i, get_name_by_lang(c, lang)) for i, c in enumerate(categories)]
+        await message.answer(t("choose_category", lang), reply_markup=choices_keyboard(opts, lang))
         return
     
-    # Валидация: проверяем, что выбрана категория B для потоков без CERT_NOT_PASSED
+    category_id = selected_category["id"]
+    category_name = get_name_by_lang(selected_category, lang)
+    
+    # Валидация: проверяем, что выбрана категория B только для потоков, где это требуется
     main_intent = data.get("main_intent")
-    if main_intent != "CERT_NOT_PASSED" and selected_category.get('code') != 'B':
+    # Для CERT_NOT_PASSED и REFRESH разрешены все категории
+    if main_intent not in ["CERT_NOT_PASSED", "REFRESH"] and selected_category.get('code') != 'B':
+        opts = [format_choice_option(i, get_name_by_lang(c, lang)) for i, c in enumerate(categories)]
         await message.answer(
             "Доступна только категория B" if lang == "RU" else "Тек B санаты қолжетімді",
-            reply_markup=choices_keyboard([f"{c['id']}: {get_name_by_lang(c, lang)}" for c in categories], lang)
+            reply_markup=choices_keyboard(opts, lang)
         )
         return
     
@@ -395,13 +423,18 @@ async def instructors_choose(message: Message, state: FSMContext):
         return
     data = await state.get_data()
     instructors = data.get("instructors", [])
+    # Ищем инструктора по тексту сообщения
     instructor = None
+    text = message.text.strip()
     for i in instructors:
-        if message.text.startswith(f"{i['id']}:"):
+        display_name = i.get('display_name', '').strip()
+        if text == display_name:
             instructor = i
             break
+    
     if not instructor:
-        await message.answer(t("choose_instructor", lang), reply_markup=choices_keyboard([f"{i['id']}: {i['display_name']}" for i in instructors], lang))
+        opts = [format_choice_option(i, inst['display_name']) for i, inst in enumerate(instructors)]
+        await message.answer(t("choose_instructor", lang), reply_markup=choices_keyboard(opts, lang))
         return
     await send_event("instructor_opened", {"instructor_id": instructor['id']}, bot_user_id=message.from_user.id)
     
@@ -465,7 +498,7 @@ async def instructors_view_pricing(message: Message, state: FSMContext):
         instructors = data.get("instructors", [])
         if instructors:
             await state.set_state(InstructorFlow.instructor)
-            opts = [f"{i['id']}: {i['display_name']}" for i in instructors]
+            opts = [format_choice_option(i, inst['display_name']) for i, inst in enumerate(instructors)]
             await message.answer(t("choose_instructor", lang), reply_markup=choices_keyboard(opts, lang))
         else:
             await state.clear()
@@ -580,7 +613,7 @@ async def instructors_view_pricing(message: Message, state: FSMContext):
         else:
             label = tariff_type
         
-        tariff_options.append(f"{tariff_item.get('id')}: {label}")
+        tariff_options.append(format_choice_option(len(tariff_options), label))
     
     from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
     tariff_keyboard = ReplyKeyboardMarkup(
@@ -666,7 +699,7 @@ async def instructors_choose_tariff(message: Message, state: FSMContext):
                 else:
                     label = tariff_type
                 
-                tariff_options.append(f"{tariff_item.get('id')}: {label}")
+                tariff_options.append(format_choice_option(len(tariff_options), label))
             
             from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
             tariff_keyboard = ReplyKeyboardMarkup(
@@ -689,9 +722,31 @@ async def instructors_choose_tariff(message: Message, state: FSMContext):
     # Обработка выбора тарифа
     data = await state.get_data()
     tariffs = data.get("tariffs", [])
+    # Ищем тариф по тексту сообщения
     selected_tariff = None
-    for tariff_item in tariffs:
-        if message.text.startswith(f"{tariff_item.get('id')}:"):
+    text = message.text.strip()
+    for tariff_item in sorted(tariffs, key=lambda x: x.get('sort_order', 0)):
+        tariff_type = tariff_item.get('tariff_type')
+        price = tariff_item.get('price_kzt', 0)
+        name_ru = tariff_item.get('name_ru', '')
+        name_kz = tariff_item.get('name_kz', '')
+        name = name_kz if lang == "KZ" else name_ru
+        
+        if tariff_type == 'SINGLE_HOUR':
+            label = t('tariff_single_hour', lang)
+        elif tariff_type == 'AUTODROM':
+            label = t('tariff_autodrom', lang)
+        elif tariff_type == 'PACKAGE_5':
+            label = t('tariff_package_5', lang)
+        elif tariff_type == 'PACKAGE_10':
+            label = t('tariff_package_10', lang)
+        elif tariff_type == 'PACKAGE_15':
+            label = t('tariff_package_15', lang)
+        else:
+            label = tariff_type
+        
+        tariff_label = label.strip()
+        if text == tariff_label:
             selected_tariff = tariff_item
             break
     
@@ -715,7 +770,7 @@ async def instructors_choose_tariff(message: Message, state: FSMContext):
             else:
                 label = tariff_type
             
-            tariff_options.append(f"{tariff_item.get('id')}: {label}")
+            tariff_options.append(format_choice_option(len(tariff_options), label))
         
         from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
         tariff_keyboard = ReplyKeyboardMarkup(
@@ -753,20 +808,42 @@ async def instructors_choose_tariff(message: Message, state: FSMContext):
     
     await message.answer(f"✅ {t('instructor_select_tariff', lang)}: {tariff_label} — {price:,} ₸")
     await send_event("lead_form_opened", {"step": "preferred_time", "flow": "instructors"}, bot_user_id=message.from_user.id)
-    await state.set_state(InstructorFlow.preferred_time)
     
-    # Формируем клавиатуру для выбора времени
-    from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
-    time_keyboard = ReplyKeyboardMarkup(
-        keyboard=[
-            [KeyboardButton(text=t("preferred_time_morning", lang))],
-            [KeyboardButton(text=t("preferred_time_day", lang))],
-            [KeyboardButton(text=t("preferred_time_evening", lang))],
-            [KeyboardButton(text=t("back", lang)), KeyboardButton(text=t("main_menu", lang))],
-        ],
-        resize_keyboard=True,
-    )
-    await message.answer(t("preferred_time_question", lang), reply_markup=time_keyboard)
+    # Загружаем время обучения из API
+    api = ApiClient()
+    try:
+        time_slots = await api.get_training_time_slots()
+    except Exception as e:
+        await api.close()
+        await handle_api_error(e, lang, message, state)
+        return
+    await api.close()
+    
+    if not time_slots:
+        await message.answer(t("error_unknown", lang), reply_markup=main_menu(lang))
+        await state.clear()
+        return
+    
+    # Формируем опции времени обучения из API
+    time_options = []
+    for i, slot in enumerate(time_slots):
+        name = slot.get('name_kz' if lang == "KZ" else 'name_ru', slot.get('name_ru', ''))
+        emoji = slot.get('emoji', '')
+        time_range = slot.get('time_range_kz' if lang == "KZ" else 'time_range_ru', slot.get('time_range_ru', ''))
+        
+        # Убираем лишние пробелы
+        name = name.strip()
+        emoji = emoji.strip() if emoji else ''
+        
+        if time_range:
+            option_text = format_choice_option(i, f"{emoji} {name} ({time_range})".strip())
+        else:
+            option_text = format_choice_option(i, f"{emoji} {name}".strip())
+        time_options.append(option_text)
+    
+    await state.update_data(training_time_slots=time_slots)
+    await state.set_state(InstructorFlow.preferred_time)
+    await message.answer(t("preferred_time_question", lang), reply_markup=choices_keyboard(time_options, lang))
 
 
 @router.message(InstructorFlow.preferred_time)
@@ -799,7 +876,7 @@ async def instructors_preferred_time(message: Message, state: FSMContext):
                 else:
                     label = tariff_type
                 
-                tariff_options.append(f"{tariff_item.get('id')}: {label}")
+                tariff_options.append(format_choice_option(len(tariff_options), label))
             
             from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
             tariff_keyboard = ReplyKeyboardMarkup(
@@ -817,33 +894,56 @@ async def instructors_preferred_time(message: Message, state: FSMContext):
             await message.answer(t("main_menu", lang), reply_markup=main_menu(lang))
         return
     
-    # Проверяем выбор времени
-    text = message.text or ""
+    # Проверяем выбор времени из загруженных слотов
+    data = await state.get_data()
+    time_slots = data.get("training_time_slots", [])
+    
     preferred_time = None
+    preferred_time_id = None
+    preferred_time_display = None
     
-    if t("preferred_time_morning", lang) in text or "утро" in text.lower() or "таңертең" in text.lower():
-        preferred_time = "MORNING"
-    elif t("preferred_time_day", lang) in text or "днём" in text.lower() or "күндіз" in text.lower():
-        preferred_time = "DAY"
-    elif t("preferred_time_evening", lang) in text or "вечером" in text.lower() or "кешке" in text.lower():
-        preferred_time = "EVENING"
+    # Ищем по тексту сообщения
+    selected_time_slot = None
+    text = message.text.strip()
+    for slot in time_slots:
+        name = slot.get('name_kz' if lang == "KZ" else 'name_ru', slot.get('name_ru', '')).strip()
+        emoji = slot.get('emoji', '').strip() if slot.get('emoji') else ''
+        time_range = slot.get('time_range_kz' if lang == "KZ" else 'time_range_ru', slot.get('time_range_ru', '')).strip()
+        
+        # Проверяем точное совпадение
+        if time_range:
+            option_text = f"{emoji} {name} ({time_range})".strip()
+        else:
+            option_text = f"{emoji} {name}".strip()
+        
+        if text == option_text:
+            selected_time_slot = slot
+            break
     
-    if not preferred_time:
-        # Неверный выбор - показываем снова
-        from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
-        time_keyboard = ReplyKeyboardMarkup(
-            keyboard=[
-                [KeyboardButton(text=t("preferred_time_morning", lang))],
-                [KeyboardButton(text=t("preferred_time_day", lang))],
-                [KeyboardButton(text=t("preferred_time_evening", lang))],
-                [KeyboardButton(text=t("back", lang)), KeyboardButton(text=t("main_menu", lang))],
-            ],
-            resize_keyboard=True,
-        )
-        await message.answer(t("preferred_time_question", lang), reply_markup=time_keyboard)
+    if not selected_time_slot:
+        # Неверный выбор, показываем снова
+        time_options = []
+        for i, slot in enumerate(time_slots):
+            name = slot.get('name_kz' if lang == "KZ" else 'name_ru', slot.get('name_ru', ''))
+            emoji = slot.get('emoji', '')
+            time_range = slot.get('time_range_kz' if lang == "KZ" else 'time_range_ru', slot.get('time_range_ru', ''))
+            
+            # Убираем лишние пробелы
+            name = name.strip()
+            emoji = emoji.strip() if emoji else ''
+            
+            if time_range:
+                option_text = format_choice_option(i, f"{emoji} {name} ({time_range})".strip())
+            else:
+                option_text = format_choice_option(i, f"{emoji} {name}".strip())
+            time_options.append(option_text)
+        await message.answer(t("preferred_time_question", lang), reply_markup=choices_keyboard(time_options, lang))
         return
     
-    await state.update_data(preferred_time=preferred_time)
+    preferred_time = selected_time_slot.get('code', '')
+    preferred_time_id = selected_time_slot.get('id')
+    preferred_time_display = selected_time_slot.get('name_kz' if lang == "KZ" else 'name_ru', selected_time_slot.get('name_ru', ''))
+    await state.update_data(preferred_time=preferred_time, preferred_time_id=preferred_time_id, preferred_time_display=preferred_time_display)
     await state.set_state(InstructorFlow.training_period)
     
     # Формируем клавиатуру для выбора периода обучения
@@ -869,18 +969,38 @@ async def instructors_training_period(message: Message, state: FSMContext):
         return
     if is_back(message.text, lang):
         # Возврат к выбору времени
+        data = await state.get_data()
+        time_slots = data.get("training_time_slots", [])
+        if not time_slots:
+            # Загружаем время обучения из API
+            api = ApiClient()
+            try:
+                time_slots = await api.get_training_time_slots()
+            except Exception as e:
+                await api.close()
+                await handle_api_error(e, lang, message, state)
+                return
+            await api.close()
+            await state.update_data(training_time_slots=time_slots)
+        
+        time_options = []
+        for i, slot in enumerate(time_slots):
+            name = slot.get('name_kz' if lang == "KZ" else 'name_ru', slot.get('name_ru', ''))
+            emoji = slot.get('emoji', '')
+            time_range = slot.get('time_range_kz' if lang == "KZ" else 'time_range_ru', slot.get('time_range_ru', ''))
+            
+            # Убираем лишние пробелы
+            name = name.strip()
+            emoji = emoji.strip() if emoji else ''
+            
+            if time_range:
+                option_text = format_choice_option(i, f"{emoji} {name} ({time_range})".strip())
+            else:
+                option_text = format_choice_option(i, f"{emoji} {name}".strip())
+            time_options.append(option_text)
+        
         await state.set_state(InstructorFlow.preferred_time)
-        from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
-        time_keyboard = ReplyKeyboardMarkup(
-            keyboard=[
-                [KeyboardButton(text=t("preferred_time_morning", lang))],
-                [KeyboardButton(text=t("preferred_time_day", lang))],
-                [KeyboardButton(text=t("preferred_time_evening", lang))],
-                [KeyboardButton(text=t("back", lang)), KeyboardButton(text=t("main_menu", lang))],
-            ],
-            resize_keyboard=True,
-        )
-        await message.answer(t("preferred_time_question", lang), reply_markup=time_keyboard)
+        await message.answer(t("preferred_time_question", lang), reply_markup=choices_keyboard(time_options, lang))
         return
     
     # Проверяем выбор периода
@@ -1015,13 +1135,15 @@ async def instructors_phone(message: Message, state: FSMContext):
     training_period = data.get('training_period', '')
     
     # Формируем текст для времени
-    preferred_time_text = ""
-    if preferred_time == "MORNING":
-        preferred_time_text = t("preferred_time_morning", lang)
-    elif preferred_time == "DAY":
-        preferred_time_text = t("preferred_time_day", lang)
-    elif preferred_time == "EVENING":
-        preferred_time_text = t("preferred_time_evening", lang)
+    preferred_time_display = data.get('preferred_time_display', '')
+    preferred_time_text = preferred_time_display
+    if not preferred_time_text:
+        # Пытаемся получить из слотов
+        time_slots = data.get("training_time_slots", [])
+        for slot in time_slots:
+            if slot.get('code') == preferred_time:
+                preferred_time_text = slot.get('name_kz' if lang == "KZ" else 'name_ru', slot.get('name_ru', ''))
+                break
     
     # Формируем текст для периода
     training_period_text = ""
@@ -1098,6 +1220,7 @@ async def instructors_confirm(message: Message, state: FSMContext):
             "instructor_tariff_id": data.get("selected_tariff_id"),
             "instructor_tariff_price_kzt": data.get("selected_tariff", {}).get("price_kzt"),
             "preferred_time": data.get("preferred_time"),
+            "training_time_id": data.get("preferred_time_id"),
             "training_period": data.get("training_period"),
         },
     }
@@ -1123,9 +1246,17 @@ async def instructors_confirm(message: Message, state: FSMContext):
     await message.answer(t("thank_you", lang), reply_markup=main_menu(lang))
     
     # Генерируем WhatsApp ссылку с шаблоном (автоматически открывается)
-    preferred_time = data.get("preferred_time", "")
+    preferred_time_code = data.get("preferred_time", "")
+    # Получаем полное название времени обучения
+    time_slots = data.get("training_time_slots", [])
+    preferred_time_display_wa = ""
+    for slot in time_slots:
+        if slot.get('code') == preferred_time_code:
+            preferred_time_display_wa = slot.get('name_kz' if lang == "KZ" else 'name_ru', slot.get('name_ru', ''))
+            break
+    
     training_period = data.get("training_period", "")
-    wa_link = build_wa_link_instructor(instr, data["name"], data["phone"], category_name, lang, preferred_time, training_period)
+    wa_link = build_wa_link_instructor(instr, data["name"], data["phone"], category_name, lang, preferred_time_display_wa, training_period)
     if wa_link:
         await send_event("whatsapp_opened", {"flow": "instructors", "instructor_id": instr["id"]}, bot_user_id=message.from_user.id)
         # Отправляем ссылку для автоматического открытия WhatsApp
@@ -1200,13 +1331,15 @@ async def instructors_confirm_any(message: Message, state: FSMContext):
     training_period = data.get('training_period', '')
     
     # Формируем текст для времени
-    preferred_time_text = ""
-    if preferred_time == "MORNING":
-        preferred_time_text = t("preferred_time_morning", lang)
-    elif preferred_time == "DAY":
-        preferred_time_text = t("preferred_time_day", lang)
-    elif preferred_time == "EVENING":
-        preferred_time_text = t("preferred_time_evening", lang)
+    preferred_time_display = data.get('preferred_time_display', '')
+    preferred_time_text = preferred_time_display
+    if not preferred_time_text:
+        # Пытаемся получить из слотов
+        time_slots = data.get("training_time_slots", [])
+        for slot in time_slots:
+            if slot.get('code') == preferred_time:
+                preferred_time_text = slot.get('name_kz' if lang == "KZ" else 'name_ru', slot.get('name_ru', ''))
+                break
     
     # Формируем текст для периода
     training_period_text = ""

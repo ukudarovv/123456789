@@ -5,6 +5,7 @@ from .views import (
     CategoryListView,
     TrainingFormatListView,
     TariffPlanListView,
+    TrainingTimeSlotListView,
 )
 
 urlpatterns = [
@@ -12,5 +13,6 @@ urlpatterns = [
     path("dicts/categories", CategoryListView.as_view()),
     path("dicts/training-formats", TrainingFormatListView.as_view()),
     path("dicts/tariff-plans", TariffPlanListView.as_view()),
+    path("dicts/training-time-slots", TrainingTimeSlotListView.as_view()),
 ]
 

@@ -23,6 +23,28 @@ def get_name_by_lang(item: dict, lang: str) -> str:
     return item.get("name_ru", item.get("name", {}).get("ru", ""))
 
 
+def format_choice_option(index: int, name: str) -> str:
+    """Форматировать опцию выбора - просто название без номера"""
+    # Убираем лишние пробелы из имени
+    return name.strip()
+
+
+def find_item_by_text(items: list, text: str, lang: str) -> dict:
+    """Найти элемент по тексту кнопки (точное совпадение или по имени)"""
+    text = text.strip()
+    # Ищем по точному совпадению имени
+    for item in items:
+        name = get_name_by_lang(item, lang).strip()
+        if text == name:
+            return item
+    # Если не нашли по точному совпадению, пробуем найти по частичному совпадению
+    for item in items:
+        name = get_name_by_lang(item, lang).strip()
+        if text in name or name in text:
+            return item
+    return None
+
+
 async def get_language(state: FSMContext) -> str:
     """Получить язык из state или вернуть дефолтный"""
     data = await state.get_data()
@@ -96,7 +118,7 @@ async def tests_start(message: Message, state: FSMContext):
     price = settings.get("tests_price_kzt", 0)
     await state.update_data(settings=settings, categories=categories, language=lang)
     await state.set_state(TestsFlow.category)
-    options = [f"{c['id']}: {get_name_by_lang(c, lang)}" for c in categories]
+    options = [format_choice_option(i, get_name_by_lang(c, lang)) for i, c in enumerate(categories)]
     await message.answer(t("choose_category", lang), reply_markup=choices_keyboard(options, lang))
 
 
@@ -115,16 +137,13 @@ async def tests_choose_category(message: Message, state: FSMContext):
     
     data = await state.get_data()
     categories = data.get("categories", [])
-    category_id = None
-    category_name = ""
-    for c in categories:
-        if message.text.startswith(f"{c['id']}:"):
-            category_id = c["id"]
-            category_name = get_name_by_lang(c, lang)
-            break
-    if not category_id:
-        await message.answer(t("choose_category", lang), reply_markup=choices_keyboard([f"{c['id']}: {get_name_by_lang(c, lang)}" for c in categories], lang))
+    selected_category = find_item_by_text(categories, message.text, lang)
+    if not selected_category:
+        opts = [format_choice_option(i, get_name_by_lang(c, lang)) for i, c in enumerate(categories)]
+        await message.answer(t("choose_category", lang), reply_markup=choices_keyboard(opts, lang))
         return
+    category_id = selected_category["id"]
+    category_name = get_name_by_lang(selected_category, lang)
     
     await send_event("category_selected", {"category_id": category_id}, bot_user_id=message.from_user.id)
     await state.update_data(category_id=category_id, category_name=category_name)
@@ -170,7 +189,7 @@ async def tests_name(message: Message, state: FSMContext):
         categories = data.get("categories", [])
         if categories:
             await state.set_state(TestsFlow.category)
-            opts = [f"{c['id']}: {get_name_by_lang(c, lang)}" for c in categories]
+            opts = [format_choice_option(i, get_name_by_lang(c, lang)) for i, c in enumerate(categories)]
             await message.answer(t("choose_category", lang), reply_markup=choices_keyboard(opts, lang))
         else:
             await state.clear()

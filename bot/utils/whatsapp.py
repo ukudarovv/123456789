@@ -4,6 +4,7 @@ import urllib.parse
 WHATSAPP_TESTS = "77026953357"  # +7 702 695 33 57 для тестов ПДД
 WHATSAPP_SCHOOLS_INSTRUCTORS = "77788981396"  # +7 778 898 13 96 для автошкол и инструкторов (основной)
 WHATSAPP_SCHOOLS_INSTRUCTORS_ALT = "77066768821"  # +7 706 676 88 21 (альтернативный, для ротации)
+WHATSAPP_SCHOOLS = "77026345274"  # +7 702 634 5274 для автошкол (новый номер согласно ТЗ)
 
 
 def build_wa_link_tests(phone: str, data: dict, category_name: str = "", lang: str = "RU") -> str:
@@ -44,37 +45,60 @@ def build_wa_link_tests(phone: str, data: dict, category_name: str = "", lang: s
     return f"https://wa.me/{owner_phone.replace('+', '')}?text={urllib.parse.quote(text)}"
 
 
-def build_wa_link_school(detail: dict, name: str, phone: str, tariff: dict, category_name: str = "", lang: str = "RU") -> str:
+def build_wa_link_school(detail: dict, name: str, phone: str, tariff: dict, category_name: str = "", lang: str = "RU", 
+                         training_time: str = "", training_format: str = "", city_name: str = "", gearbox: str = "") -> str:
     """Генерация WhatsApp ссылки с шаблоном для автошколы согласно ТЗ"""
-    # Используем фиксированный номер согласно ТЗ
-    owner_phone = WHATSAPP_SCHOOLS_INSTRUCTORS
+    # Используем новый номер согласно ТЗ: +7 702 634 5274
+    owner_phone = WHATSAPP_SCHOOLS
     
     school_name = detail.get('name', {}).get('kz' if lang == "KZ" else 'ru', detail.get('name', {}).get('ru', ''))
-    service_name = "Автошкола" if lang == "RU" else "Автошкола"
+    
+    # Импортируем функцию перевода
+    from i18n import t
+    
+    # training_time уже приходит как отображаемое название (не код)
+    training_time_text = training_time
+    
+    # Формируем текст для КПП
+    gearbox_text = ""
+    if gearbox == "AUTOMATIC":
+        gearbox_text = f" ({t('gearbox_automatic', lang)})"
+    elif gearbox == "MANUAL":
+        gearbox_text = f" ({t('gearbox_manual', lang)})"
     
     # Новый шаблон согласно ТЗ
     if lang == "KZ":
         text = (
-            f"Здравствуйте!\n\n"
-            f"Новая заявка с Telegram-бота.\n\n"
-            f"👤 Имя: {name}\n"
-            f"💬 WhatsApp: {phone}\n"
-            f"📘 Услуга: {service_name} — {school_name}\n"
+            f"Здравствуйте!\n"
+            f"Заявка на обучение:\n\n"
         )
+        if city_name:
+            text += f"Қала: {city_name}\n"
         if category_name:
-            text += f"📗 Санат: {category_name}\n"
-        text += f"🌐 Тіл: KZ"
+            text += f"Санат: {category_name}{gearbox_text}\n"
+        if training_format:
+            text += f"Формат: {training_format}\n"
+        if training_time_text:
+            text += f"Уақыт: {training_time_text}\n"
+        text += f"Автошкола: {school_name}\n"
+        text += f"Аты: {name}\n"
+        text += f"Телефон: {phone}"
     else:
         text = (
-            f"Здравствуйте!\n\n"
-            f"Новая заявка с Telegram-бота.\n\n"
-            f"👤 Имя: {name}\n"
-            f"💬 WhatsApp: {phone}\n"
-            f"📘 Услуга: {service_name} — {school_name}\n"
+            f"Здравствуйте!\n"
+            f"Заявка на обучение:\n\n"
         )
+        if city_name:
+            text += f"Город: {city_name}\n"
         if category_name:
-            text += f"📗 Категория: {category_name}\n"
-        text += f"🌐 Язык: RU"
+            text += f"Категория: {category_name}{gearbox_text}\n"
+        if training_format:
+            text += f"Формат: {training_format}\n"
+        if training_time_text:
+            text += f"Время: {training_time_text}\n"
+        text += f"Автошкола: {school_name}\n"
+        text += f"Имя: {name}\n"
+        text += f"Телефон: {phone}"
     
     return f"https://wa.me/{owner_phone.replace('+', '')}?text={urllib.parse.quote(text)}"
 
@@ -90,14 +114,8 @@ def build_wa_link_instructor(instructor_detail: dict, name: str, phone: str, cat
     # Импортируем функцию перевода
     from i18n import t
     
-    # Формируем текст для времени
-    preferred_time_text = ""
-    if preferred_time == "MORNING":
-        preferred_time_text = t("preferred_time_morning", lang)
-    elif preferred_time == "DAY":
-        preferred_time_text = t("preferred_time_day", lang)
-    elif preferred_time == "EVENING":
-        preferred_time_text = t("preferred_time_evening", lang)
+    # preferred_time уже приходит как отображаемое название (не код)
+    preferred_time_text = preferred_time
     
     # Формируем текст для периода
     training_period_text = ""

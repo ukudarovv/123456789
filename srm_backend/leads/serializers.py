@@ -3,7 +3,7 @@ from rest_framework import serializers
 
 from botusers.models import BotUser
 from catalog.models import School, Instructor
-from dictionaries.models import City, Category, TrainingFormat, TariffPlan
+from dictionaries.models import City, Category, TrainingFormat, TariffPlan, TrainingTimeSlot
 from .models import Lead, LeadStatusHistory
 
 
@@ -92,6 +92,7 @@ class LeadCreateSerializer(serializers.Serializer):
                         city_id=payload.get("city_id"),
                         category_id=payload.get("category_id"),
                         training_format_id=payload.get("training_format_id"),
+                        training_time_id=payload.get("training_time_id"),
                         school_id=payload.get("school_id"),
                         tariff_plan_id=payload.get("tariff_plan_id"),
                         tariff_price_kzt=payload.get("tariff_price_kzt"),
@@ -105,6 +106,7 @@ class LeadCreateSerializer(serializers.Serializer):
                         gearbox=payload.get("gearbox"),
                         preferred_instructor_gender=payload.get("preferred_instructor_gender"),
                         has_driver_license=payload.get("has_driver_license"),
+                        training_time_id=payload.get("training_time_id"),
                         instructor_id=payload.get("instructor_id"),
                         instructor_tariff_id=payload.get("instructor_tariff_id"),
                         instructor_tariff_price_kzt=payload.get("instructor_tariff_price_kzt"),

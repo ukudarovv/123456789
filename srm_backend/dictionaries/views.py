@@ -1,12 +1,13 @@
 from rest_framework import generics
 
 from accounts.permissions import ApiKeyPermission
-from .models import City, Category, TrainingFormat, TariffPlan
+from .models import City, Category, TrainingFormat, TariffPlan, TrainingTimeSlot
 from .serializers import (
     CitySerializer,
     CategorySerializer,
     TrainingFormatSerializer,
     TariffPlanSerializer,
+    TrainingTimeSlotSerializer,
 )
 
 
@@ -49,6 +50,17 @@ class TariffPlanListView(generics.ListAPIView):
 
     def get_queryset(self):
         qs = TariffPlan.objects.all()
+        if self.request.query_params.get("is_active", "true").lower() == "true":
+            qs = qs.filter(is_active=True)
+        return qs
+
+
+class TrainingTimeSlotListView(generics.ListAPIView):
+    serializer_class = TrainingTimeSlotSerializer
+    permission_classes = [ApiKeyPermission]
+
+    def get_queryset(self):
+        qs = TrainingTimeSlot.objects.all()
         if self.request.query_params.get("is_active", "true").lower() == "true":
             qs = qs.filter(is_active=True)
         return qs

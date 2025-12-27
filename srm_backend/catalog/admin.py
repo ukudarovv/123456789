@@ -3,9 +3,10 @@ from django.contrib import admin
 from .models import School, SchoolTariff, Instructor, InstructorTariff
 
 
-class SchoolTariffInline(admin.TabularInline):
+class SchoolTariffInline(admin.StackedInline):
     model = SchoolTariff
     extra = 1
+    filter_horizontal = ("categories", "training_times",)
 
 
 @admin.register(School)
@@ -18,9 +19,10 @@ class SchoolAdmin(admin.ModelAdmin):
 
 @admin.register(SchoolTariff)
 class SchoolTariffAdmin(admin.ModelAdmin):
-    list_display = ("school", "tariff_plan", "price_kzt", "is_active")
-    list_filter = ("tariff_plan", "is_active")
+    list_display = ("school", "tariff_plan", "training_format", "price_kzt", "is_active")
+    list_filter = ("tariff_plan", "training_format", "is_active")
     search_fields = ("school__name_ru",)
+    filter_horizontal = ("categories", "training_times",)
 
 
 class InstructorTariffInline(admin.TabularInline):

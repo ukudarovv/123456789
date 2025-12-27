@@ -7,6 +7,7 @@ class SchoolFlow(StatesGroup):
     training_format = State()
     school = State()
     school_card = State()  # Показ карточки школы с кнопкой "Записаться"
+    training_time = State()  # Выбор времени обучения (утро/день/вечер)
     tariff = State()
     name = State()
     phone = State()
