@@ -9,6 +9,8 @@ class SchoolTariffSerializer(serializers.ModelSerializer):
     name_kz = serializers.CharField(source="tariff_plan.name_kz", read_only=True)
     category_ids = serializers.SerializerMethodField()
     training_time_ids = serializers.SerializerMethodField()
+    gearbox_ids = serializers.SerializerMethodField()
+    gearbox = serializers.SerializerMethodField()  # Для обратной совместимости с ботом
 
     class Meta:
         model = SchoolTariff
@@ -23,6 +25,8 @@ class SchoolTariffSerializer(serializers.ModelSerializer):
             "category_ids",
             "training_format_id",
             "training_time_ids",
+            "gearbox_ids",
+            "gearbox",
         )
     
     def get_category_ids(self, obj):
@@ -33,10 +37,19 @@ class SchoolTariffSerializer(serializers.ModelSerializer):
         """Возвращает список ID времен обучения для тарифа"""
         return list(obj.training_times.values_list('id', flat=True))
     
+    def get_gearbox_ids(self, obj):
+        """Возвращает список ID коробок передач для тарифа"""
+        return list(obj.gearboxes.values_list('id', flat=True))
+    
+    def get_gearbox(self, obj):
+        """Возвращает код первой коробки передач для обратной совместимости с ботом"""
+        gearbox = obj.gearboxes.first()
+        return gearbox.code if gearbox else None
+    
     def to_representation(self, instance):
         data = super().to_representation(instance)
-        # Удаляем null/None значения
-        return {k: v for k, v in data.items() if v is not None}
+        # Удаляем null/None значения, кроме gearbox (может быть None для обратной совместимости)
+        return {k: v for k, v in data.items() if v is not None or k == "gearbox"}
 
 
 class SchoolListSerializer(serializers.ModelSerializer):
@@ -92,10 +105,11 @@ class SchoolDetailSerializer(SchoolListSerializer):
         fields = SchoolListSerializer.Meta.fields + ("contact_phone", "whatsapp_phone", "tariffs")
     
     def get_tariffs(self, obj):
-        tariffs = obj.tariffs.filter(is_active=True).prefetch_related('categories', 'training_times')
+        tariffs = obj.tariffs.filter(is_active=True).prefetch_related('categories', 'training_times', 'gearboxes')
         category_id = self.context.get('category_id')
         training_format_id = self.context.get('training_format_id')
         training_time_id = self.context.get('training_time_id')
+        gearbox = self.context.get('gearbox')
         
         # Фильтрация: тариф показывается, если он не привязан к категориям (пусто) или содержит выбранную категорию
         if category_id:
@@ -120,6 +134,10 @@ class SchoolDetailSerializer(SchoolListSerializer):
                 tariffs = tariffs.filter(training_times__id=training_time_id).distinct()
             except (ValueError, TypeError):
                 pass
+        
+        # Фильтрация по КПП: тариф показывается, если он не привязан к КПП (пусто) или содержит выбранный код КПП
+        if gearbox:
+            tariffs = tariffs.filter(Q(gearboxes__code=gearbox) | Q(gearboxes__isnull=True)).distinct()
         
         return SchoolTariffSerializer(tariffs, many=True).data
 

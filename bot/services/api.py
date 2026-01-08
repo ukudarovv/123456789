@@ -110,7 +110,7 @@ class ApiClient:
         )
         return resp.json()
 
-    async def get_school_detail(self, school_id: int, category_id: Optional[int] = None, training_format_id: Optional[int] = None, training_time_id: Optional[int] = None):
+    async def get_school_detail(self, school_id: int, category_id: Optional[int] = None, training_format_id: Optional[int] = None, training_time_id: Optional[int] = None, gearbox: Optional[str] = None):
         params = {}
         if category_id:
             params["category_id"] = category_id
@@ -118,6 +118,8 @@ class ApiClient:
             params["training_format_id"] = training_format_id
         if training_time_id:
             params["training_time_id"] = training_time_id
+        if gearbox:
+            params["gearbox"] = gearbox
         resp = await self._request_with_retry("GET", f"{self.base_url}/schools/{school_id}", params=params, headers=self._headers())
         return resp.json()
 

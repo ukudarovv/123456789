@@ -61,10 +61,11 @@ def build_wa_link_school(detail: dict, name: str, phone: str, tariff: dict, cate
     
     # Формируем текст для КПП
     gearbox_text = ""
-    if gearbox == "AUTOMATIC":
-        gearbox_text = f" ({t('gearbox_automatic', lang)})"
-    elif gearbox == "MANUAL":
-        gearbox_text = f" ({t('gearbox_manual', lang)})"
+    if gearbox:
+        if gearbox == "AT" or gearbox == "AUTOMATIC":
+            gearbox_text = f" ({t('gearbox_automatic', lang)})"
+        elif gearbox == "MT" or gearbox == "MANUAL":
+            gearbox_text = f" ({t('gearbox_manual', lang)})"
     
     # Новый шаблон согласно ТЗ
     if lang == "KZ":

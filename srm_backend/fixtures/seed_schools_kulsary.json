@@ -1,0 +1,362 @@
+[
+  {
+    "model": "dictionaries.category",
+    "pk": 9,
+    "fields": {
+      "code": "BC",
+      "name_ru": "Категория BC",
+      "name_kz": "Санат BC",
+      "is_active": true,
+      "sort_order": 9
+    }
+  },
+  {
+    "model": "dictionaries.category",
+    "pk": 13,
+    "fields": {
+      "code": "BC1",
+      "name_ru": "Категория BC1",
+      "name_kz": "Санат BC1",
+      "is_active": true,
+      "sort_order": 13
+    }
+  },
+  {
+    "model": "dictionaries.category",
+    "pk": 10,
+    "fields": {
+      "code": "CE",
+      "name_ru": "Категория CE",
+      "name_kz": "Санат CE",
+      "is_active": true,
+      "sort_order": 10
+    }
+  },
+  {
+    "model": "dictionaries.category",
+    "pk": 11,
+    "fields": {
+      "code": "DE",
+      "name_ru": "Категория DE",
+      "name_kz": "Санат DE",
+      "is_active": true,
+      "sort_order": 11
+    }
+  },
+  {
+    "model": "dictionaries.category",
+    "pk": 12,
+    "fields": {
+      "code": "TRACTOR",
+      "name_ru": "Тракторист-машинист",
+      "name_kz": "Тракторшы-машинист",
+      "is_active": true,
+      "sort_order": 12
+    }
+  },
+  {
+    "model": "dictionaries.trainingtimeslot",
+    "pk": 1,
+    "fields": {
+      "code": "MORNING",
+      "name_ru": "Утро",
+      "name_kz": "Таңертең",
+      "emoji": "",
+      "time_range_ru": "",
+      "time_range_kz": "",
+      "is_active": true,
+      "sort_order": 1
+    }
+  },
+  {
+    "model": "dictionaries.trainingtimeslot",
+    "pk": 2,
+    "fields": {
+      "code": "DAY",
+      "name_ru": "День",
+      "name_kz": "Күндіз",
+      "emoji": "",
+      "time_range_ru": "",
+      "time_range_kz": "",
+      "is_active": true,
+      "sort_order": 2
+    }
+  },
+  {
+    "model": "dictionaries.trainingtimeslot",
+    "pk": 3,
+    "fields": {
+      "code": "EVENING",
+      "name_ru": "Вечер",
+      "name_kz": "Кешке",
+      "emoji": "",
+      "time_range_ru": "",
+      "time_range_kz": "",
+      "is_active": true,
+      "sort_order": 3
+    }
+  },
+  {
+    "model": "catalog.school",
+    "pk": 2,
+    "fields": {
+      "city": 2,
+      "name_ru": "АвтоТехАрна",
+      "name_kz": "АвтоТехАрна",
+      "rating": "4.5",
+      "trust_index": 85,
+      "trust_index_text_ru": "высокий",
+      "trust_index_text_kz": "жоғары",
+      "description_ru": "20 лет доверия. Обучение для жизни, а не «для галочки».",
+      "description_kz": "20 жыл сенім. Өмір үшін оқу, «галочка» үшін емес.",
+      "address_ru": "Кульсары, Атырауская область",
+      "address_kz": "Құлсары, Атырау облысы",
+      "nearest_intake_date": null,
+      "nearest_intake_text_ru": "по мере формирования групп",
+      "nearest_intake_text_kz": "топтар қалыптасқан сайын",
+      "contact_phone": "+77026345274",
+      "whatsapp_phone": "+77026345274",
+      "is_active": true,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "catalog.schooltariff",
+    "pk": 100,
+    "fields": {
+      "school": 2,
+      "tariff_plan": 1,
+      "training_format": 1,
+      "gearbox": "AT",
+      "price_kzt": 30000,
+      "currency": "KZT",
+      "description_ru": "",
+      "description_kz": "",
+      "is_active": true,
+      "categories": [1, 6, 8, 9, 10],
+      "training_times": [1, 2, 3]
+    }
+  },
+  {
+    "model": "catalog.schooltariff",
+    "pk": 101,
+    "fields": {
+      "school": 2,
+      "tariff_plan": 2,
+      "training_format": 1,
+      "gearbox": "MT",
+      "price_kzt": 30000,
+      "currency": "KZT",
+      "description_ru": "",
+      "description_kz": "",
+      "is_active": true,
+      "categories": [1, 5, 7, 11],
+      "training_times": [1, 2, 3]
+    }
+  },
+  {
+    "model": "catalog.schooltariff",
+    "pk": 102,
+    "fields": {
+      "school": 2,
+      "tariff_plan": 1,
+      "training_format": 2,
+      "gearbox": "AT",
+      "price_kzt": 30000,
+      "currency": "KZT",
+      "description_ru": "",
+      "description_kz": "",
+      "is_active": true,
+      "categories": [1, 5, 9, 10],
+      "training_times": [1, 2, 3]
+    }
+  },
+  {
+    "model": "catalog.schooltariff",
+    "pk": 103,
+    "fields": {
+      "school": 2,
+      "tariff_plan": 2,
+      "training_format": 2,
+      "gearbox": "MT",
+      "price_kzt": 30000,
+      "currency": "KZT",
+      "description_ru": "",
+      "description_kz": "",
+      "is_active": true,
+      "categories": [1, 5, 8, 9, 10, 11, 12],
+      "training_times": [1, 2, 3]
+    }
+  },
+  {
+    "model": "catalog.schooltariff",
+    "pk": 104,
+    "fields": {
+      "school": 2,
+      "tariff_plan": 3,
+      "training_format": 1,
+      "gearbox": "AT",
+      "price_kzt": 60000,
+      "currency": "KZT",
+      "description_ru": "",
+      "description_kz": "",
+      "is_active": true,
+      "categories": [3, 9, 13],
+      "training_times": [1, 2, 3]
+    }
+  },
+  {
+    "model": "catalog.schooltariff",
+    "pk": 105,
+    "fields": {
+      "school": 2,
+      "tariff_plan": 3,
+      "training_format": 2,
+      "gearbox": "MT",
+      "price_kzt": 80000,
+      "currency": "KZT",
+      "description_ru": "",
+      "description_kz": "",
+      "is_active": true,
+      "categories": [3, 9, 13],
+      "training_times": [1, 2, 3]
+    }
+  },
+  {
+    "model": "catalog.schooltariff",
+    "pk": 106,
+    "fields": {
+      "school": 2,
+      "tariff_plan": 1,
+      "training_format": 1,
+      "gearbox": "MT",
+      "price_kzt": 80000,
+      "currency": "KZT",
+      "description_ru": "",
+      "description_kz": "",
+      "is_active": true,
+      "categories": [3, 7, 12],
+      "training_times": [1, 2, 3]
+    }
+  },
+  {
+    "model": "catalog.schooltariff",
+    "pk": 107,
+    "fields": {
+      "school": 2,
+      "tariff_plan": 2,
+      "training_format": 2,
+      "gearbox": "AT",
+      "price_kzt": 80000,
+      "currency": "KZT",
+      "description_ru": "",
+      "description_kz": "",
+      "is_active": true,
+      "categories": [3, 9, 13],
+      "training_times": [1, 2, 3]
+    }
+  },
+  {
+    "model": "catalog.schooltariff",
+    "pk": 108,
+    "fields": {
+      "school": 2,
+      "tariff_plan": 1,
+      "training_format": 2,
+      "gearbox": "MT",
+      "price_kzt": 30000,
+      "currency": "KZT",
+      "description_ru": "",
+      "description_kz": "",
+      "is_active": true,
+      "categories": [6, 11],
+      "training_times": [1, 2, 3]
+    }
+  },
+  {
+    "model": "catalog.schooltariff",
+    "pk": 109,
+    "fields": {
+      "school": 2,
+      "tariff_plan": 2,
+      "training_format": 1,
+      "gearbox": "AT",
+      "price_kzt": 30000,
+      "currency": "KZT",
+      "description_ru": "",
+      "description_kz": "",
+      "is_active": true,
+      "categories": [6, 12],
+      "training_times": [1, 2, 3]
+    }
+  },
+  {
+    "model": "catalog.schooltariff",
+    "pk": 110,
+    "fields": {
+      "school": 2,
+      "tariff_plan": 3,
+      "training_format": 1,
+      "gearbox": "MT",
+      "price_kzt": 30000,
+      "currency": "KZT",
+      "description_ru": "",
+      "description_kz": "",
+      "is_active": true,
+      "categories": [5, 8],
+      "training_times": [1, 2, 3]
+    }
+  },
+  {
+    "model": "catalog.schooltariff",
+    "pk": 111,
+    "fields": {
+      "school": 2,
+      "tariff_plan": 3,
+      "training_format": 2,
+      "gearbox": "AT",
+      "price_kzt": 30000,
+      "currency": "KZT",
+      "description_ru": "",
+      "description_kz": "",
+      "is_active": true,
+      "categories": [5, 7, 11],
+      "training_times": [1, 2, 3]
+    }
+  },
+  {
+    "model": "catalog.schooltariff",
+    "pk": 112,
+    "fields": {
+      "school": 2,
+      "tariff_plan": 3,
+      "training_format": 2,
+      "gearbox": "MT",
+      "price_kzt": 100000,
+      "currency": "KZT",
+      "description_ru": "",
+      "description_kz": "",
+      "is_active": true,
+      "categories": [3, 9, 13],
+      "training_times": [1, 2, 3]
+    }
+  },
+  {
+    "model": "catalog.schooltariff",
+    "pk": 113,
+    "fields": {
+      "school": 2,
+      "tariff_plan": 3,
+      "training_format": 2,
+      "gearbox": "AT",
+      "price_kzt": 100000,
+      "currency": "KZT",
+      "description_ru": "",
+      "description_kz": "",
+      "is_active": true,
+      "categories": [3, 9, 13],
+      "training_times": [1, 2, 3]
+    }
+  }
+]

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import City, Category, TrainingFormat, TariffPlan, TrainingTimeSlot
+from .models import City, Category, TrainingFormat, TariffPlan, TrainingTimeSlot, Gearbox
 
 
 @admin.register(City)
@@ -33,6 +33,13 @@ class TariffPlanAdmin(admin.ModelAdmin):
 @admin.register(TrainingTimeSlot)
 class TrainingTimeSlotAdmin(admin.ModelAdmin):
     list_display = ("code", "name_ru", "name_kz", "emoji", "time_range_ru", "is_active", "sort_order")
+    list_filter = ("is_active",)
+    search_fields = ("code", "name_ru", "name_kz")
+
+
+@admin.register(Gearbox)
+class GearboxAdmin(admin.ModelAdmin):
+    list_display = ("code", "name_ru", "name_kz", "is_active", "sort_order")
     list_filter = ("is_active",)
     search_fields = ("code", "name_ru", "name_kz")
 

@@ -1,6 +1,6 @@
 from django.db import models
 
-from dictionaries.models import City, Category, TrainingFormat, TariffPlan, TrainingTimeSlot
+from dictionaries.models import City, Category, TrainingFormat, TariffPlan, TrainingTimeSlot, Gearbox
 
 
 class School(models.Model):
@@ -42,6 +42,7 @@ class SchoolTariff(models.Model):
     categories = models.ManyToManyField(Category, related_name="tariffs", blank=True)
     training_format = models.ForeignKey(TrainingFormat, on_delete=models.SET_NULL, null=True, blank=True)
     training_times = models.ManyToManyField(TrainingTimeSlot, related_name="tariffs", blank=True)
+    gearboxes = models.ManyToManyField(Gearbox, related_name="tariffs", blank=True)
     price_kzt = models.IntegerField()
     currency = models.CharField(max_length=3, default="KZT")
     description_ru = models.TextField(null=True, blank=True)

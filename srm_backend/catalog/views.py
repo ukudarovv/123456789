@@ -26,7 +26,8 @@ class SchoolDetailView(generics.RetrieveAPIView):
         "tariffs__tariff_plan", 
         "tariffs__categories", 
         "tariffs__training_format",
-        "tariffs__training_times"
+        "tariffs__training_times",
+        "tariffs__gearboxes"
     )
     
     def get_serializer_context(self):
@@ -34,6 +35,7 @@ class SchoolDetailView(generics.RetrieveAPIView):
         context['category_id'] = self.request.query_params.get('category_id')
         context['training_format_id'] = self.request.query_params.get('training_format_id')
         context['training_time_id'] = self.request.query_params.get('training_time_id')
+        context['gearbox'] = self.request.query_params.get('gearbox')
         return context
 
 

@@ -86,3 +86,22 @@ class TrainingTimeSlot(models.Model):
     def __str__(self):
         return f"{self.code} - {self.name_ru}"
 
+
+class Gearbox(models.Model):
+    """Модель для типа коробки передач"""
+    code = models.CharField(max_length=10, unique=True)  # AT, MT
+    name_ru = models.CharField(max_length=255)  # Автомат, Механика
+    name_kz = models.CharField(max_length=255)  # Автомат, Механика
+    is_active = models.BooleanField(default=True)
+    sort_order = models.IntegerField(default=0)
+
+    class Meta:
+        db_table = "dict_gearbox"
+        ordering = ["sort_order", "id"]
+        indexes = [
+            models.Index(fields=["is_active", "sort_order"]),
+        ]
+
+    def __str__(self):
+        return f"{self.code} - {self.name_ru}"
+
