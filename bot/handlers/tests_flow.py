@@ -104,7 +104,7 @@ async def tests_start(message: Message, state: FSMContext):
     api = ApiClient()
     try:
         settings = await api.get_settings()
-        categories = await api.get_categories()
+        categories = await api.get_categories(for_tests=True)
     except Exception as e:
         await api.close()
         await handle_api_error(e, lang, message, state)
@@ -259,14 +259,14 @@ async def tests_whatsapp(message: Message, state: FSMContext):
     
     confirm_text_ru = (
         f"{t('confirm_data', lang)}\n\n"
-        f"👤 Имя и фамилия: {data['name']}\n"
+        f"👤 Имя, фамилия и отчество: {data['name']}\n"
         f"🆔 ИИН: {data['iin']}\n"
         f"💬 WhatsApp номер: {whatsapp}\n"
         f"📘 Услуга: {t('tests_info_title', lang)} {category_name}"
     )
     confirm_text_kz = (
         f"{t('confirm_data', lang)}\n\n"
-        f"👤 Аты және тегі: {data['name']}\n"
+        f"👤 Аты, тегі және әкесінің аты: {data['name']}\n"
         f"🆔 ЖСН: {data['iin']}\n"
         f"💬 WhatsApp нөмірі: {whatsapp}\n"
         f"📘 Қызмет: {t('tests_info_title', lang)} {category_name}"
@@ -314,8 +314,10 @@ async def tests_confirm(message: Message, state: FSMContext):
     await message.answer(t("thank_you", lang), reply_markup=main_menu(lang))
     
     # Генерируем WhatsApp сообщение владельцу согласно ТЗ
-    # phone параметр не используется, номер берется из константы в whatsapp.py
-    wa_link = build_wa_link_tests("", data, category_name, lang)
+    # Получаем номер WhatsApp из настроек
+    settings = data.get("settings", {})
+    owner_whatsapp = settings.get("owner_whatsapp", "")
+    wa_link = build_wa_link_tests("", data, category_name, lang, owner_whatsapp=owner_whatsapp)
     if wa_link:
         await send_event("whatsapp_opened", {"flow": "tests"}, bot_user_id=message.from_user.id)
         # Отправляем ссылку для автоматического открытия WhatsApp
@@ -355,14 +357,14 @@ async def tests_confirm_any(message: Message, state: FSMContext):
     
     confirm_text_ru = (
         f"{t('confirm_data', lang)}\n\n"
-        f"👤 Имя и фамилия: {data['name']}\n"
+        f"👤 Имя, фамилия и отчество: {data['name']}\n"
         f"🆔 ИИН: {data['iin']}\n"
         f"💬 WhatsApp номер: {data['whatsapp']}\n"
         f"📘 Услуга: {t('tests_info_title', lang)} {category_name}"
     )
     confirm_text_kz = (
         f"{t('confirm_data', lang)}\n\n"
-        f"👤 Аты және тегі: {data['name']}\n"
+        f"👤 Аты, тегі және әкесінің аты: {data['name']}\n"
         f"🆔 ЖСН: {data['iin']}\n"
         f"💬 WhatsApp нөмірі: {data['whatsapp']}\n"
         f"📘 Қызмет: {t('tests_info_title', lang)} {category_name}"

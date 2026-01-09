@@ -4,7 +4,7 @@ from django.db import models
 
 from botusers.models import BotUser
 from catalog.models import School, Instructor, InstructorTariff
-from dictionaries.models import City, Category, TrainingFormat, TariffPlan, TrainingTimeSlot
+from dictionaries.models import City, Category, TrainingFormat, TrainingTimeSlot
 
 
 class Lead(models.Model):
@@ -38,7 +38,7 @@ class Lead(models.Model):
     training_format = models.ForeignKey(TrainingFormat, on_delete=models.SET_NULL, null=True, blank=True)
     training_time = models.ForeignKey(TrainingTimeSlot, on_delete=models.SET_NULL, null=True, blank=True)
     school = models.ForeignKey(School, on_delete=models.SET_NULL, null=True, blank=True)
-    tariff_plan = models.ForeignKey(TariffPlan, on_delete=models.SET_NULL, null=True, blank=True)
+    tariff_name = models.CharField(max_length=255, null=True, blank=True, verbose_name="Название тарифа")
     tariff_price_kzt = models.IntegerField(null=True, blank=True)
 
     # Instructor flow

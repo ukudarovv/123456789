@@ -28,7 +28,10 @@ class CategoryListView(generics.ListAPIView):
 
     def get_queryset(self):
         qs = Category.objects.all()
-        if self.request.query_params.get("is_active", "true").lower() == "true":
+        # Фильтрация для тестов по ПДД
+        if self.request.query_params.get("for_tests", "false").lower() == "true":
+            qs = qs.filter(is_active=True, show_in_tests=True)
+        elif self.request.query_params.get("is_active", "true").lower() == "true":
             qs = qs.filter(is_active=True)
         return qs
 

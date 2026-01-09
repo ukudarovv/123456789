@@ -1,4 +1,5 @@
 from typing import Optional
+import asyncio
 
 from aiogram import Router, F
 from aiogram.filters import Command
@@ -15,6 +16,9 @@ from utils.validators import normalize_phone
 from utils.whatsapp import build_wa_link_school
 
 router = Router()
+
+# Флаги обработки для предотвращения параллельного выполнения обработчика школы
+_processing_schools = set()
 
 
 async def get_language(state: FSMContext) -> str:
@@ -279,7 +283,8 @@ async def _load_and_show_tariffs(message: Message, state: FSMContext, lang: str,
             category_id=category_id,
             training_format_id=training_format_id,
             training_time_id=training_time_id,
-            gearbox=gearbox
+            gearbox=gearbox,
+            language=lang
         )
     except Exception as e:
         await api.close()
@@ -294,6 +299,36 @@ async def _load_and_show_tariffs(message: Message, state: FSMContext, lang: str,
         return
     
     await state.update_data(tariffs=tariffs)
+    
+    # Если остался только один тариф, автоматически выбираем его и показываем описание
+    if len(tariffs) == 1:
+        tariff = tariffs[0]
+        await send_event("tariff_selected", {"tariff_name": tariff.get('name_ru') or tariff.get('name_kz', '')}, bot_user_id=message.from_user.id)
+        await state.update_data(selected_tariff=tariff)
+        
+        # Получаем описание тарифа
+        tariff_description = tariff.get('description_kz' if lang == "KZ" else 'description_ru', tariff.get('description_ru', ''))
+        tariff_name = get_tariff_name(tariff, lang)
+        tariff_price = tariff.get('price_kzt', 0)
+        
+        # Показываем описание тарифа, если оно есть, или цену, если описания нет
+        if tariff_description:
+            description_text = (
+                f"<b>{tariff_name} — {tariff_price:,} ₸</b>\n\n"
+                f"{tariff_description}"
+            )
+            await message.answer(description_text, parse_mode="HTML")
+        else:
+            # Если нет описания, показываем только цену
+            price_text = f"<b>{tariff_name} — {tariff_price:,} ₸</b>"
+            await message.answer(price_text, parse_mode="HTML")
+        
+        await send_event("lead_form_opened", {"step": "name", "flow": "schools"}, bot_user_id=message.from_user.id)
+        await state.set_state(SchoolFlow.name)
+        await message.answer(t("enter_name", lang), reply_markup=back_keyboard(lang))
+        return
+    
+    # Если тарифов больше одного, показываем клавиатуру для выбора
     opts = [format_choice_option(i, get_tariff_name(tariff_item, lang)) for i, tariff_item in enumerate(tariffs)]
     await state.set_state(SchoolFlow.tariff)
     await message.answer(t("choose_tariff", lang), reply_markup=choices_keyboard(opts, lang))
@@ -498,7 +533,7 @@ async def schools_choose_category(message: Message, state: FSMContext):
     if school_id:
         api = ApiClient()
         try:
-            detail = await api.get_school_detail(school_id, category_id=category_id)
+            detail = await api.get_school_detail(school_id, category_id=category_id, language=lang)
             tariffs = detail.get("tariffs", [])
             await state.update_data(tariffs=tariffs)
         except Exception:
@@ -517,7 +552,7 @@ async def schools_choose_category(message: Message, state: FSMContext):
         if school_id:
             api = ApiClient()
             try:
-                detail = await api.get_school_detail(school_id, category_id=category_id, training_format_id=fmt_id)
+                detail = await api.get_school_detail(school_id, category_id=category_id, training_format_id=fmt_id, language=lang)
                 tariffs = detail.get("tariffs", [])
                 await state.update_data(tariffs=tariffs)
             except Exception:
@@ -668,102 +703,86 @@ async def schools_choose_school(message: Message, state: FSMContext):
         return
     school_id = selected_school["id"]
     
-    await send_event("school_selected", {"school_id": school_id}, bot_user_id=message.from_user.id)
+    # СТРОГАЯ защита от дублирования: используем флаг обработки на основе user_id и school_id
+    processing_key = f"{message.from_user.id}_{school_id}"
     
-    # Загружаем детали школы с тарифами БЕЗ фильтров (категория еще не выбрана)
-    # Фильтры будут применены позже при выборе категории и формата
-    api = ApiClient()
+    # Если уже обрабатываем эту школу для этого пользователя - выходим немедленно
+    if processing_key in _processing_schools:
+        return
+    
+    # Помечаем, что начинаем обработку
+    _processing_schools.add(processing_key)
+    
     try:
-        detail = await api.get_school_detail(school_id)
-    except Exception as e:
+        
+        await send_event("school_selected", {"school_id": school_id}, bot_user_id=message.from_user.id)
+        
+        # Загружаем детали школы с тарифами БЕЗ фильтров (категория еще не выбрана)
+        # Фильтры будут применены позже при выборе категории и формата
+        api = ApiClient()
+        try:
+            detail = await api.get_school_detail(school_id, language=lang)
+        except Exception as e:
+            await api.close()
+            await handle_api_error(e, lang, message, state)
+            return
         await api.close()
-        await handle_api_error(e, lang, message, state)
-        return
-    await api.close()
-    
-    tariffs = detail.get("tariffs", [])
-    if not tariffs:
-        await message.answer(t("no_tariffs", lang) if hasattr(t, "no_tariffs") else "Нет доступных тарифов", reply_markup=main_menu(lang))
-        await state.clear()
-        return
-    
-    # Формируем и показываем описание школы
-    school_name = get_name_by_lang(detail.get('name', {}), lang) or detail.get('name', {}).get('ru', '')
-    description = detail.get('description', {})
-    description_text = description.get('kz' if lang == "KZ" else 'ru', description.get('ru', ''))
-    
-    cities = data.get("cities", [])
-    city_name = next((get_name_by_lang(c, lang) for c in cities if c["id"] == data['city_id']), "")
-    
-    experience_years = detail.get('experience_years', detail.get('rating', 0))
-    if isinstance(experience_years, (int, float)) and experience_years > 0:
-        experience_text = f"более {int(experience_years)} лет" if experience_years >= 1 else f"{int(experience_years)} лет"
-    else:
-        experience_text = "более 20 лет"
-    
-    address = detail.get('address', {})
-    address_text = address.get('kz' if lang == "KZ" else 'ru', address.get('ru', ''))
-    if city_name and address_text:
-        location_text = f"{city_name}, {address_text}"
-    elif city_name:
-        location_text = city_name
-    elif address_text:
-        location_text = address_text
-    else:
-        location_text = ""
-    
-    nearest_intake = detail.get('nearest_intake', {})
-    intake_text = nearest_intake.get('text_kz' if lang == "KZ" else 'text_ru', nearest_intake.get('text_ru', ''))
-    if not intake_text:
-        intake_text = "по мере формирования групп" if lang == "RU" else "топтар қалыптасқан сайын"
-    
-    # Формируем текст описания школы
-    card_text = f"🏫 <b>Автошкола «{school_name}»</b>"
-    if city_name:
-        card_text += f" ({city_name})"
-    card_text += "\n\n"
-    
-    if description_text:
-        card_text += f"{description_text}\n\n"
-    
-    card_text += f"{t('school_characteristics', lang)}\n"
-    card_text += f" • ⭐ {t('school_experience', lang)}: {experience_text}\n"
-    card_text += f" • 🔐 {t('school_licensed', lang)}\n"
-    if location_text:
-        card_text += f" • 📍 {location_text}\n"
-    card_text += f" • 🗓 {t('school_intake', lang)}: {intake_text}\n\n"
-    
-    card_text += f"{t('school_important', lang)}\n"
-    card_text += f" • {t('school_theory_practice', lang)}\n"
-    card_text += f" • {t('school_experienced_instructors', lang)}\n"
-    card_text += f" • {t('school_own_autodrom', lang)}\n"
-    card_text += f" • {t('school_exam_prep', lang)}\n"
-    
-    # Показываем описание школы
-    await message.answer(card_text, parse_mode="HTML")
-    
-    # Загружаем все категории для извлечения доступных
-    api = ApiClient()
-    try:
-        all_categories = await api.get_categories()
-    except Exception as e:
+        
+        tariffs = detail.get("tariffs", [])
+        if not tariffs:
+            await message.answer(t("no_tariffs", lang) if hasattr(t, "no_tariffs") else "Нет доступных тарифов", reply_markup=main_menu(lang))
+            await state.clear()
+            return
+        
+        # Формируем и показываем описание школы - просто название и описание из БД
+        school_name = get_name_by_lang(detail.get('name', {}), lang) or detail.get('name', {}).get('ru', '')
+        # Описание теперь приходит как строка на нужном языке из бэкенда
+        description_text = detail.get('description', '')
+        if description_text:
+            description_text = description_text.strip()
+        else:
+            description_text = ""
+        
+        cities = data.get("cities", [])
+        city_name = next((get_name_by_lang(c, lang) for c in cities if c["id"] == data['city_id']), "")
+        
+        # Просто показываем название школы и описание из БД
+        card_text = f"🏫 <b>Автошкола «{school_name}»</b>"
+        if city_name:
+            card_text += f" ({city_name})"
+        card_text += "\n\n"
+        
+        if description_text:
+            card_text += f"{description_text}"
+        
+        # Показываем описание школы (только один раз)
+        await message.answer(card_text, parse_mode="HTML")
+        
+        # Загружаем все категории для извлечения доступных
+        api = ApiClient()
+        try:
+            all_categories = await api.get_categories()
+        except Exception as e:
+            await api.close()
+            await handle_api_error(e, lang, message, state)
+            return
         await api.close()
-        await handle_api_error(e, lang, message, state)
-        return
-    await api.close()
-    
-    # Извлекаем доступные категории из тарифов
-    available_categories = extract_available_categories(tariffs, all_categories)
-    
-    if not available_categories:
-        await message.answer(t("no_categories", lang) if hasattr(t, "no_categories") else "Нет доступных категорий", reply_markup=main_menu(lang))
-        await state.clear()
-        return
-    
-    await state.update_data(school_id=school_id, school_detail=detail, tariffs=tariffs, categories=available_categories)
-    opts = [format_choice_option(i, get_name_by_lang(c, lang)) for i, c in enumerate(available_categories)]
-    await state.set_state(SchoolFlow.category)
-    await message.answer(t("choose_category", lang), reply_markup=choices_keyboard(opts, lang))
+        
+        # Извлекаем доступные категории из тарифов
+        available_categories = extract_available_categories(tariffs, all_categories)
+        
+        if not available_categories:
+            await message.answer(t("no_categories", lang) if hasattr(t, "no_categories") else "Нет доступных категорий", reply_markup=main_menu(lang))
+            await state.clear()
+            return
+        
+        await state.update_data(school_id=school_id, school_detail=detail, tariffs=tariffs, categories=available_categories)
+        opts = [format_choice_option(i, get_name_by_lang(c, lang)) for i, c in enumerate(available_categories)]
+        await state.set_state(SchoolFlow.category)
+        await message.answer(t("choose_category", lang), reply_markup=choices_keyboard(opts, lang))
+    finally:
+        # Снимаем флаг обработки
+        _processing_schools.discard(processing_key)
 
 
 # Обработчик school_card больше не используется в новом потоке
@@ -798,81 +817,24 @@ async def schools_register_button_old(message: Message, state: FSMContext):
         data = await state.get_data()
         detail = data.get("school_detail", {})
         school_name = get_name_by_lang(detail.get('name', {}), lang) or detail.get('name', {}).get('ru', '')
-        description = detail.get('description', {})
-        description_text = description.get('kz' if lang == "KZ" else 'ru', description.get('ru', ''))
+        # Описание теперь приходит как строка на нужном языке из бэкенда
+        description_text = detail.get('description', '')
+        if description_text:
+            description_text = description_text.strip()
+        else:
+            description_text = ""
         
         cities = data.get("cities", [])
         city_name = next((get_name_by_lang(c, lang) for c in cities if c["id"] == data['city_id']), "")
         
-        experience_years = detail.get('experience_years', detail.get('rating', 0))
-        if isinstance(experience_years, (int, float)) and experience_years > 0:
-            experience_text = f"более {int(experience_years)} лет" if experience_years >= 1 else f"{int(experience_years)} лет"
-        else:
-            experience_text = "более 20 лет"
-        
-        address = detail.get('address', {})
-        address_text = address.get('kz' if lang == "KZ" else 'ru', address.get('ru', ''))
-        if city_name and address_text:
-            location_text = f"{city_name}, {address_text}"
-        elif city_name:
-            location_text = city_name
-        elif address_text:
-            location_text = address_text
-        else:
-            location_text = ""
-        
-        nearest_intake = detail.get('nearest_intake', {})
-        intake_text = nearest_intake.get('text_kz' if lang == "KZ" else 'text_ru', nearest_intake.get('text_ru', ''))
-        if not intake_text:
-            intake_text = "по мере формирования групп" if lang == "RU" else "топтар қалыптасқан сайын"
-        
-        card_text_ru = (
-            f"🏫 <b>Автошкола «{school_name}»</b>"
-        )
+        # Просто показываем название школы и описание из БД
+        card_text = f"🏫 <b>Автошкола «{school_name}»</b>"
         if city_name:
-            card_text_ru += f" ({city_name})"
-        card_text_ru += "\n\n"
+            card_text += f" ({city_name})"
+        card_text += "\n\n"
         
         if description_text:
-            card_text_ru += f"{description_text}\n\n"
-        
-        card_text_ru += f"{t('school_characteristics', lang)}\n"
-        card_text_ru += f" • ⭐ {t('school_experience', lang)}: {experience_text}\n"
-        card_text_ru += f" • 🔐 {t('school_licensed', lang)}\n"
-        if location_text:
-            card_text_ru += f" • 📍 {location_text}\n"
-        card_text_ru += f" • 🗓 {t('school_intake', lang)}: {intake_text}\n\n"
-        
-        card_text_ru += f"{t('school_important', lang)}\n"
-        card_text_ru += f" • {t('school_theory_practice', lang)}\n"
-        card_text_ru += f" • {t('school_experienced_instructors', lang)}\n"
-        card_text_ru += f" • {t('school_own_autodrom', lang)}\n"
-        card_text_ru += f" • {t('school_exam_prep', lang)}\n"
-        
-        card_text_kz = (
-            f"🏫 <b>Автошкола «{school_name}»</b>"
-        )
-        if city_name:
-            card_text_kz += f" ({city_name})"
-        card_text_kz += "\n\n"
-        
-        if description_text:
-            card_text_kz += f"{description_text}\n\n"
-        
-        card_text_kz += f"{t('school_characteristics', lang)}\n"
-        card_text_kz += f" • ⭐ {t('school_experience', lang)}: {experience_text}\n"
-        card_text_kz += f" • 🔐 {t('school_licensed', lang)}\n"
-        if location_text:
-            card_text_kz += f" • 📍 {location_text}\n"
-        card_text_kz += f" • 🗓 {t('school_intake', lang)}: {intake_text}\n\n"
-        
-        card_text_kz += f"{t('school_important', lang)}\n"
-        card_text_kz += f" • {t('school_theory_practice', lang)}\n"
-        card_text_kz += f" • {t('school_experienced_instructors', lang)}\n"
-        card_text_kz += f" • {t('school_own_autodrom', lang)}\n"
-        card_text_kz += f" • {t('school_exam_prep', lang)}\n"
-        
-        card_text = card_text_kz if lang == "KZ" else card_text_ru
+            card_text += f"{description_text}"
         from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
         register_keyboard = ReplyKeyboardMarkup(
             keyboard=[[KeyboardButton(text=t("register_button", lang))]],
@@ -1064,7 +1026,7 @@ async def schools_choose_tariff(message: Message, state: FSMContext):
         await message.answer(t("choose_tariff", lang), reply_markup=choices_keyboard(opts, lang))
         return
     tariff = selected_tariff
-    await send_event("tariff_selected", {"tariff_plan_id": tariff['tariff_plan_id']}, bot_user_id=message.from_user.id)
+    await send_event("tariff_selected", {"tariff_name": tariff.get('name_ru') or tariff.get('name_kz', '')}, bot_user_id=message.from_user.id)
     await state.update_data(selected_tariff=tariff)
     
     # Получаем описание тарифа
@@ -1223,7 +1185,7 @@ async def schools_confirm(message: Message, state: FSMContext):
             "training_format_id": data["training_format_id"],
             "training_time_id": data.get("training_time_id"),
             "school_id": data["school_id"],
-            "tariff_plan_id": tariff["tariff_plan_id"],
+            "tariff_name": tariff.get('name_ru') or tariff.get('name_kz', ''),
             "tariff_price_kzt": tariff.get("price_kzt"),
             "gearbox": gearbox,
         },

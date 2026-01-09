@@ -1,6 +1,6 @@
 from django.db import models
 
-from dictionaries.models import City, Category, TrainingFormat, TariffPlan, TrainingTimeSlot, Gearbox
+from dictionaries.models import City, Category, TrainingFormat, TrainingTimeSlot, Gearbox
 
 
 class School(models.Model):
@@ -38,7 +38,7 @@ class School(models.Model):
 
 class SchoolTariff(models.Model):
     school = models.ForeignKey(School, on_delete=models.CASCADE, related_name="tariffs")
-    tariff_plan = models.ForeignKey(TariffPlan, on_delete=models.PROTECT)
+    tariff_name = models.CharField(max_length=255, verbose_name="Название тарифа")
     categories = models.ManyToManyField(Category, related_name="tariffs", blank=True)
     training_format = models.ForeignKey(TrainingFormat, on_delete=models.SET_NULL, null=True, blank=True)
     training_times = models.ManyToManyField(TrainingTimeSlot, related_name="tariffs", blank=True)
@@ -51,14 +51,14 @@ class SchoolTariff(models.Model):
 
     class Meta:
         db_table = "school_tariff"
-        unique_together = ("school", "tariff_plan", "training_format")
+        unique_together = ("school", "tariff_name", "training_format")
         indexes = [
             models.Index(fields=["school", "is_active"]),
             models.Index(fields=["training_format", "is_active"]),
         ]
 
     def __str__(self):
-        return f"{self.school} - {self.tariff_plan.code}"
+        return f"{self.school} - {self.tariff_name}"
 
 
 class Instructor(models.Model):

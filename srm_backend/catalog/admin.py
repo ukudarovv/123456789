@@ -19,9 +19,9 @@ class SchoolAdmin(admin.ModelAdmin):
 
 @admin.register(SchoolTariff)
 class SchoolTariffAdmin(admin.ModelAdmin):
-    list_display = ("school", "tariff_plan", "training_format", "price_kzt", "is_active")
-    list_filter = ("tariff_plan", "training_format", "is_active", "gearboxes")
-    search_fields = ("school__name_ru",)
+    list_display = ("school", "tariff_name", "training_format", "price_kzt", "is_active")
+    list_filter = ("training_format", "is_active", "gearboxes")
+    search_fields = ("school__name_ru", "tariff_name")
     filter_horizontal = ("categories", "training_times", "gearboxes",)
 
 

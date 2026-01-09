@@ -11,8 +11,8 @@ class CityAdmin(admin.ModelAdmin):
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ("code", "name_ru", "is_active", "sort_order")
-    list_filter = ("is_active",)
+    list_display = ("code", "name_ru", "is_active", "show_in_tests", "sort_order")
+    list_filter = ("is_active", "show_in_tests")
     search_fields = ("code", "name_ru", "name_kz")
 
 

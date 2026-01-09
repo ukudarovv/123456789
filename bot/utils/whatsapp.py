@@ -7,12 +7,22 @@ WHATSAPP_SCHOOLS_INSTRUCTORS_ALT = "77066768821"  # +7 706 676 88 21 (альте
 WHATSAPP_SCHOOLS = "77026345274"  # +7 702 634 5274 для автошкол (новый номер согласно ТЗ)
 
 
-def build_wa_link_tests(phone: str, data: dict, category_name: str = "", lang: str = "RU") -> str:
-    """Генерация WhatsApp ссылки для тестов согласно новому ТЗ (номер: +7 702 695 33 57)"""
-    # Используем фиксированный номер согласно ТЗ
-    owner_phone = WHATSAPP_TESTS  # +7 702 695 33 57
+def build_wa_link_tests(phone: str, data: dict, category_name: str = "", lang: str = "RU", owner_whatsapp: str = None) -> str:
+    """Генерация WhatsApp ссылки для тестов"""
+    # Используем номер из настроек, если передан и не пустой, иначе fallback на константу
+    if owner_whatsapp:
+        # Преобразуем в строку на случай, если это число
+        owner_phone = str(owner_whatsapp).strip()
+        if not owner_phone:
+            owner_phone = WHATSAPP_TESTS  # Fallback на константу, если пустая строка
+    else:
+        owner_phone = WHATSAPP_TESTS  # Fallback на константу
+    
     if not owner_phone:
         return ""
+    
+    # Нормализуем номер: убираем + и пробелы, оставляем только цифры
+    owner_phone = owner_phone.replace("+", "").replace(" ", "").replace("-", "").replace("(", "").replace(")", "").strip()
     
     # Новый шаблон согласно ТЗ
     service_name = "Тесты по ПДД" if lang == "RU" else "ЖҚД тесттері"
@@ -21,7 +31,7 @@ def build_wa_link_tests(phone: str, data: dict, category_name: str = "", lang: s
         text = (
             f"Здравствуйте!\n\n"
             f"Новая заявка с Telegram-бота.\n\n"
-            f"👤 Имя: {data.get('name', '')}\n"
+            f"👤 Имя, фамилия и отчество: {data.get('name', '')}\n"
             f"🆔 ЖСН: {data.get('iin', '')}\n"
             f"💬 WhatsApp: {data.get('whatsapp', '')}\n"
             f"📘 Услуга: {service_name}\n"
@@ -33,7 +43,7 @@ def build_wa_link_tests(phone: str, data: dict, category_name: str = "", lang: s
         text = (
             f"Здравствуйте!\n\n"
             f"Новая заявка с Telegram-бота.\n\n"
-            f"👤 Имя: {data.get('name', '')}\n"
+            f"👤 Имя, фамилия и отчество: {data.get('name', '')}\n"
             f"🆔 ИИН: {data.get('iin', '')}\n"
             f"💬 WhatsApp: {data.get('whatsapp', '')}\n"
             f"📘 Услуга: {service_name}\n"
@@ -48,8 +58,21 @@ def build_wa_link_tests(phone: str, data: dict, category_name: str = "", lang: s
 def build_wa_link_school(detail: dict, name: str, phone: str, tariff: dict, category_name: str = "", lang: str = "RU", 
                          training_time: str = "", training_format: str = "", city_name: str = "", gearbox: str = "") -> str:
     """Генерация WhatsApp ссылки с шаблоном для автошколы согласно ТЗ"""
-    # Используем новый номер согласно ТЗ: +7 702 634 5274
-    owner_phone = WHATSAPP_SCHOOLS
+    # Используем номер WhatsApp из БД школы, если есть, иначе fallback на константу
+    owner_phone = detail.get('whatsapp_phone', '') or WHATSAPP_SCHOOLS
+    if owner_phone:
+        # Преобразуем в строку на случай, если это число
+        owner_phone = str(owner_phone).strip()
+        if not owner_phone:
+            owner_phone = WHATSAPP_SCHOOLS  # Fallback на константу, если пустая строка
+    else:
+        owner_phone = WHATSAPP_SCHOOLS  # Fallback на константу
+    
+    if not owner_phone:
+        return ""
+    
+    # Нормализуем номер: убираем + и пробелы, оставляем только цифры
+    owner_phone = owner_phone.replace("+", "").replace(" ", "").replace("-", "").replace("(", "").replace(")", "").strip()
     
     school_name = detail.get('name', {}).get('kz' if lang == "KZ" else 'ru', detail.get('name', {}).get('ru', ''))
     

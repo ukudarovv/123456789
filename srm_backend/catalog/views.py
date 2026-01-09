@@ -14,7 +14,7 @@ class SchoolListView(generics.ListAPIView):
         city_id = self.request.query_params.get("city_id")
         if not city_id:
             raise ValidationError({"city_id": "city_id is required"})
-        qs = School.objects.filter(is_active=True, city_id=city_id).prefetch_related("tariffs", "tariffs__tariff_plan")
+        qs = School.objects.filter(is_active=True, city_id=city_id).prefetch_related("tariffs")
         return qs
 
 
@@ -23,7 +23,6 @@ class SchoolDetailView(generics.RetrieveAPIView):
     permission_classes = [ApiKeyPermission]
     queryset = School.objects.filter(is_active=True).prefetch_related(
         "tariffs", 
-        "tariffs__tariff_plan", 
         "tariffs__categories", 
         "tariffs__training_format",
         "tariffs__training_times",
@@ -36,6 +35,7 @@ class SchoolDetailView(generics.RetrieveAPIView):
         context['training_format_id'] = self.request.query_params.get('training_format_id')
         context['training_time_id'] = self.request.query_params.get('training_time_id')
         context['gearbox'] = self.request.query_params.get('gearbox')
+        context['language'] = self.request.query_params.get('language', 'RU')  # По умолчанию RU
         return context
 
 

@@ -70,6 +70,124 @@ def find_item_by_text(items: list, text: str, lang: str) -> dict:
     return None
 
 
+async def has_instructors_in_city(city_id: int) -> bool:
+    """Проверить, есть ли хотя бы один инструктор в городе (для любой категории)"""
+    api = ApiClient()
+    try:
+        # Получаем все категории
+        categories = await api.get_categories()
+        if not categories:
+            return False
+        
+        # Проверяем каждую категорию на наличие инструкторов
+        for category in categories:
+            category_id = category.get('id')
+            if not category_id:
+                continue
+            
+            try:
+                # Пробуем получить инструкторов без фильтров по gearbox и gender
+                instructors = await api.get_instructors(city_id=city_id, category_id=category_id)
+                if instructors and isinstance(instructors, list) and len(instructors) > 0:
+                    return True
+            except Exception:
+                # Если ошибка при получении инструкторов для категории, пропускаем её
+                continue
+        
+        return False
+    finally:
+        await api.close()
+
+
+async def extract_available_categories_for_instructors(city_id: int, all_categories: list) -> list:
+    """Извлечь категории, для которых есть доступные инструкторы в городе"""
+    api = ApiClient()
+    available_category_ids = set()
+    
+    try:
+        # Проверяем каждую категорию на наличие инструкторов
+        for category in all_categories:
+            category_id = category.get('id')
+            if not category_id:
+                continue
+            
+            try:
+                # Пробуем получить инструкторов без фильтров по gearbox и gender
+                instructors = await api.get_instructors(city_id=city_id, category_id=category_id)
+                if instructors and isinstance(instructors, list) and len(instructors) > 0:
+                    available_category_ids.add(category_id)
+            except Exception:
+                # Если ошибка при получении инструкторов для категории, пропускаем её
+                continue
+    finally:
+        await api.close()
+    
+    # Возвращаем только категории с доступными инструкторами
+    result = [cat for cat in all_categories if cat.get('id') in available_category_ids]
+    return result
+
+
+async def get_available_gearboxes_for_category(city_id: int, category_id: int) -> list:
+    """Получить список доступных КПП для категории в городе"""
+    api = ApiClient()
+    available_gearboxes = []
+    
+    try:
+        # Проверяем наличие инструкторов с AT
+        try:
+            instructors_at = await api.get_instructors(city_id=city_id, category_id=category_id, gearbox="AT")
+            if instructors_at and isinstance(instructors_at, list) and len(instructors_at) > 0:
+                available_gearboxes.append("AT")
+        except Exception:
+            pass
+        
+        # Проверяем наличие инструкторов с MT
+        try:
+            instructors_mt = await api.get_instructors(city_id=city_id, category_id=category_id, gearbox="MT")
+            if instructors_mt and isinstance(instructors_mt, list) and len(instructors_mt) > 0:
+                available_gearboxes.append("MT")
+        except Exception:
+            pass
+    finally:
+        await api.close()
+    
+    return available_gearboxes
+
+
+def format_instructor_card(instructor_detail: dict, lang: str) -> str:
+    """Форматировать карточку инструктора с правильным извлечением bio"""
+    bio = instructor_detail.get('bio', {})
+    # Правильно извлекаем bio_text с учетом возможных None значений
+    if isinstance(bio, dict):
+        bio_text = bio.get('kz' if lang == "KZ" else 'ru') or bio.get('ru') or ''
+    else:
+        bio_text = ''
+    
+    # Убираем лишние пробелы и проверяем, что текст не пустой
+    bio_text = bio_text.strip() if bio_text else ''
+    
+    gearbox_text = t("gearbox_automatic", lang) if instructor_detail.get('gearbox') == "AT" else t("gearbox_manual", lang)
+    gender_text = t("gender_male", lang) if instructor_detail.get('gender') == "M" else t("gender_female", lang)
+    
+    # Получаем категории
+    categories = instructor_detail.get('categories', [])
+    category_codes = [cat.get('code', '') for cat in categories if cat.get('code')]
+    category_text = ", ".join(category_codes) if category_codes else ""
+    
+    card_text = (
+        f"{t('instructor_card_title', lang)}\n\n"
+        f"<b>{instructor_detail['display_name']}</b>\n\n"
+        f"{gender_text}\n"
+        f"{gearbox_text}\n"
+    )
+    if category_text:
+        card_text += f"📗 {t('choose_category', lang)}: {category_text}\n"
+    if bio_text:
+        card_text += f"\n{bio_text}\n"
+    
+    return card_text
+
+
 async def handle_api_error(error: Exception, lang: str, message: Message, state: FSMContext):
     """Обработать ошибку API и отправить понятное сообщение пользователю"""
     if isinstance(error, ApiClientError):
@@ -116,6 +234,20 @@ async def instructors_start(message: Message, state: FSMContext):
     if not cities:
         await message.answer(t("no_cities", lang), reply_markup=main_menu(lang))
         return
+    
+    # Для потока REFRESH ("Записаться на вождение") фильтруем города по наличию инструкторов
+    if main_intent == "REFRESH":
+        cities_with_instructors = []
+        for city in cities:
+            city_id = city.get('id')
+            if city_id and await has_instructors_in_city(city_id):
+                cities_with_instructors.append(city)
+        
+        cities = cities_with_instructors
+        if not cities:
+            await message.answer(t("no_instructors", lang), reply_markup=main_menu(lang))
+            return
+    
     await state.set_state(InstructorFlow.city)
     # Восстанавливаем main_intent, если он был установлен
     update_data = {"cities": cities, "language": lang}
@@ -159,17 +291,31 @@ async def instructors_choose_city(message: Message, state: FSMContext):
         return
     await api.close()
     
-    # Фильтрация категорий: только B для потока CERT_NOT_PASSED, для REFRESH показываем все категории
+    # Фильтрация категорий: только B для потока CERT_NOT_PASSED, для REFRESH фильтруем по доступным инструкторам
     data = await state.get_data()
     main_intent = data.get("main_intent")
-    # Для потока CERT_NOT_PASSED показываем все категории
-    # Для потока REFRESH ("Записаться на вождение") тоже показываем все категории
-    # Фильтрация по B применяется только для других потоков (если такие есть)
+    
     if main_intent not in ["CERT_NOT_PASSED", "REFRESH"]:
         # Оставляем только категорию B для других потоков
         categories = [c for c in categories if c.get('code') == 'B']
         if not categories:
             await message.answer("Категория B не найдена" if lang == "RU" else "B санаты табылмады", reply_markup=main_menu(lang))
+            await state.clear()
+            return
+    elif main_intent == "REFRESH":
+        # Для потока REFRESH ("Записаться на вождение") фильтруем категории по доступным инструкторам
+        categories = await extract_available_categories_for_instructors(city_id, categories)
+        if not categories:
+            # Если нет доступных категорий, значит в городе нет инструкторов
+            await message.answer(t("no_instructors", lang), reply_markup=main_menu(lang))
+            await state.clear()
+            return
+    elif main_intent == "CERT_NOT_PASSED":
+        # Для потока CERT_NOT_PASSED также фильтруем категории по доступным инструкторам
+        categories = await extract_available_categories_for_instructors(city_id, categories)
+        if not categories:
+            # Если нет доступных категорий, значит в городе нет инструкторов
+            await message.answer(t("no_instructors", lang), reply_markup=main_menu(lang))
             await state.clear()
             return
     
@@ -225,13 +371,44 @@ async def instructors_choose_category(message: Message, state: FSMContext):
     await send_event("category_selected", {"category_id": category_id}, bot_user_id=message.from_user.id)
     await state.update_data(category_id=category_id, category_name=category_name)
     
-    # После категории - выбор КПП
-    await state.set_state(InstructorFlow.gearbox)
-    gearbox_options = [
-        t("gearbox_automatic", lang),
-        t("gearbox_manual", lang)
-    ]
-    await message.answer(t("gearbox_prompt", lang), reply_markup=choices_keyboard(gearbox_options, lang))
+    # Проверяем доступные КПП для выбранной категории
+    data = await state.get_data()
+    city_id = data.get("city_id")
+    if not city_id:
+        await message.answer(t("error_unknown", lang), reply_markup=main_menu(lang))
+        await state.clear()
+        return
+    
+    available_gearboxes = await get_available_gearboxes_for_category(city_id, category_id)
+    
+    if not available_gearboxes:
+        # Если нет доступных КПП, значит нет инструкторов для этой категории
+        await message.answer(t("no_instructors", lang), reply_markup=main_menu(lang))
+        await state.clear()
+        return
+    elif len(available_gearboxes) == 1:
+        # Если доступен только один вариант КПП, автоматически выбираем его
+        selected_gearbox = available_gearboxes[0]
+        await send_event("gearbox_selected", {"gearbox": selected_gearbox}, bot_user_id=message.from_user.id)
+        await state.update_data(gearbox=selected_gearbox)
+        await state.set_state(InstructorFlow.instructor_gender)
+        # Кнопки выбора пола согласно ТЗ
+        gender_options = [
+            t("gender_male", lang),
+            t("gender_female", lang),
+            t("gender_any", lang)
+        ]
+        await message.answer(t("gender_prompt", lang), reply_markup=choices_keyboard(gender_options, lang))
+    else:
+        # Если доступны оба варианта, показываем выбор КПП
+        await state.set_state(InstructorFlow.gearbox)
+        gearbox_options = []
+        for gb in available_gearboxes:
+            if gb == "AT":
+                gearbox_options.append(t("gearbox_automatic", lang))
+            elif gb == "MT":
+                gearbox_options.append(t("gearbox_manual", lang))
+        await message.answer(t("gearbox_prompt", lang), reply_markup=choices_keyboard(gearbox_options, lang))
 
 
 @router.message(InstructorFlow.gearbox)
@@ -247,11 +424,28 @@ async def instructors_choose_gearbox(message: Message, state: FSMContext):
         categories = data.get("categories", [])
         if categories:
             await state.set_state(InstructorFlow.category)
-            opts = [f"{c['id']}: {get_name_by_lang(c, lang)}" for c in categories]
+            opts = [format_choice_option(i, get_name_by_lang(c, lang)) for i, c in enumerate(categories)]
             await message.answer(t("choose_category", lang), reply_markup=choices_keyboard(opts, lang))
         else:
             await state.clear()
             await message.answer(t("main_menu", lang), reply_markup=main_menu(lang))
+        return
+    
+    # Получаем доступные КПП для проверки
+    data = await state.get_data()
+    city_id = data.get("city_id")
+    category_id = data.get("category_id")
+    
+    if not city_id or not category_id:
+        await message.answer(t("error_unknown", lang), reply_markup=main_menu(lang))
+        await state.clear()
+        return
+    
+    available_gearboxes = await get_available_gearboxes_for_category(city_id, category_id)
+    
+    if not available_gearboxes:
+        await message.answer(t("no_instructors", lang), reply_markup=main_menu(lang))
+        await state.clear()
         return
     
     # Определяем gearbox по тексту кнопки
@@ -272,11 +466,26 @@ async def instructors_choose_gearbox(message: Message, state: FSMContext):
         # Fallback на старый формат
         gearbox = message.text.strip().upper() if message.text else ""
         if gearbox not in {"AT", "MT"}:
-            gearbox_options_ru = [t("gearbox_automatic", lang), t("gearbox_manual", lang)]
-            gearbox_options_kz = [t("gearbox_automatic", "KZ"), t("gearbox_manual", "KZ")]
-            gearbox_options = gearbox_options_kz if lang == "KZ" else gearbox_options_ru
+            # Показываем только доступные варианты КПП
+            gearbox_options = []
+            for gb in available_gearboxes:
+                if gb == "AT":
+                    gearbox_options.append(t("gearbox_automatic", lang))
+                elif gb == "MT":
+                    gearbox_options.append(t("gearbox_manual", lang))
             await message.answer(t("gearbox_prompt", lang), reply_markup=choices_keyboard(gearbox_options, lang))
             return
+    
+    # Проверяем, что выбранный КПП доступен
+    if gearbox not in available_gearboxes:
+        gearbox_options = []
+        for gb in available_gearboxes:
+            if gb == "AT":
+                gearbox_options.append(t("gearbox_automatic", lang))
+            elif gb == "MT":
+                gearbox_options.append(t("gearbox_manual", lang))
+        await message.answer(t("gearbox_prompt", lang), reply_markup=choices_keyboard(gearbox_options, lang))
+        return
     
     await send_event("gearbox_selected", {"gearbox": gearbox}, bot_user_id=message.from_user.id)
     await state.update_data(gearbox=gearbox)
@@ -384,10 +593,9 @@ async def instructors_gender(message: Message, state: FSMContext):
     # Формируем список инструкторов для отображения БЕЗ цен согласно новому ТЗ
     opts = []
     for i in instructors:
-        instructor_id = i.get('id')
         display_name = i.get('display_name', '')
-        if instructor_id and display_name:
-            opts.append(f"{instructor_id}: {display_name}")
+        if display_name:
+            opts.append(format_choice_option(len(opts), display_name))
     
     if not opts:
         await message.answer(t("no_instructors", lang), reply_markup=main_menu(lang))
@@ -426,13 +634,25 @@ async def instructors_choose(message: Message, state: FSMContext):
     # Ищем инструктора по тексту сообщения
     instructor = None
     text = message.text.strip()
+    
+    # Обрабатываем случай, когда пользователь мог ввести текст с ID (например, "1: Имя")
+    # или только имя
     for i in instructors:
         display_name = i.get('display_name', '').strip()
+        instructor_id = i.get('id')
+        
+        # Проверяем точное совпадение по display_name
         if text == display_name:
+            instructor = i
+            break
+        
+        # Проверяем совпадение с форматом "ID: display_name" (на случай, если где-то остался старый формат)
+        if instructor_id and f"{instructor_id}: {display_name}" == text:
             instructor = i
             break
     
     if not instructor:
+        # Если не нашли, показываем список снова (без ID)
         opts = [format_choice_option(i, inst['display_name']) for i, inst in enumerate(instructors)]
         await message.answer(t("choose_instructor", lang), reply_markup=choices_keyboard(opts, lang))
         return
@@ -449,27 +669,7 @@ async def instructors_choose(message: Message, state: FSMContext):
     await api.close()
     
     # Показываем карточку инструктора БЕЗ цен согласно новому ТЗ
-    bio = instructor_detail.get('bio', {})
-    bio_text = bio.get('kz' if lang == "KZ" else 'ru', bio.get('ru', ''))
-    gearbox_text = t("gearbox_automatic", lang) if instructor_detail.get('gearbox') == "AT" else t("gearbox_manual", lang)
-    
-    gender_text = t("gender_male", lang) if instructor_detail.get('gender') == "M" else t("gender_female", lang)
-    
-    # Получаем категории
-    categories = instructor_detail.get('categories', [])
-    category_codes = [cat.get('code', '') for cat in categories]
-    category_text = ", ".join(category_codes) if category_codes else ""
-    
-    card_text = (
-        f"{t('instructor_card_title', lang)}\n\n"
-        f"<b>{instructor_detail['display_name']}</b>\n\n"
-        f"{gender_text}\n"
-        f"{gearbox_text}\n"
-    )
-    if category_text:
-        card_text += f"📗 {t('choose_category', lang)}: {category_text}\n"
-    if bio_text:
-        card_text += f"\n{bio_text}\n"
+    card_text = format_instructor_card(instructor_detail, lang)
     
     await state.update_data(selected_instructor=instructor_detail)
     await state.set_state(InstructorFlow.instructor_card)
@@ -510,24 +710,7 @@ async def instructors_view_pricing(message: Message, state: FSMContext):
         # Если не кнопка, показываем снова карточку
         data = await state.get_data()
         instructor_detail = data.get("selected_instructor", {})
-        bio = instructor_detail.get('bio', {})
-        bio_text = bio.get('kz' if lang == "KZ" else 'ru', bio.get('ru', ''))
-        gearbox_text = t("gearbox_automatic", lang) if instructor_detail.get('gearbox') == "AT" else t("gearbox_manual", lang)
-        gender_text = t("gender_male", lang) if instructor_detail.get('gender') == "M" else t("gender_female", lang)
-        categories = instructor_detail.get('categories', [])
-        category_codes = [cat.get('code', '') for cat in categories]
-        category_text = ", ".join(category_codes) if category_codes else ""
-        
-        card_text = (
-            f"{t('instructor_card_title', lang)}\n\n"
-            f"<b>{instructor_detail['display_name']}</b>\n\n"
-            f"{gender_text}\n"
-            f"{gearbox_text}\n"
-        )
-        if category_text:
-            card_text += f"📗 {t('choose_category', lang)}: {category_text}\n"
-        if bio_text:
-            card_text += f"\n{bio_text}\n"
+        card_text = format_instructor_card(instructor_detail, lang)
         
         from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
         pricing_button = ReplyKeyboardMarkup(
@@ -640,24 +823,7 @@ async def instructors_choose_tariff(message: Message, state: FSMContext):
         # Возврат к карточке инструктора
         data = await state.get_data()
         instructor_detail = data.get("selected_instructor", {})
-        bio = instructor_detail.get('bio', {})
-        bio_text = bio.get('kz' if lang == "KZ" else 'ru', bio.get('ru', ''))
-        gearbox_text = t("gearbox_automatic", lang) if instructor_detail.get('gearbox') == "AT" else t("gearbox_manual", lang)
-        gender_text = t("gender_male", lang) if instructor_detail.get('gender') == "M" else t("gender_female", lang)
-        categories = instructor_detail.get('categories', [])
-        category_codes = [cat.get('code', '') for cat in categories]
-        category_text = ", ".join(category_codes) if category_codes else ""
-        
-        card_text = (
-            f"{t('instructor_card_title', lang)}\n\n"
-            f"<b>{instructor_detail['display_name']}</b>\n\n"
-            f"{gender_text}\n"
-            f"{gearbox_text}\n"
-        )
-        if category_text:
-            card_text += f"📗 {t('choose_category', lang)}: {category_text}\n"
-        if bio_text:
-            card_text += f"\n{bio_text}\n"
+        card_text = format_instructor_card(instructor_detail, lang)
         
         from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
         pricing_button = ReplyKeyboardMarkup(

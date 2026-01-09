@@ -24,6 +24,7 @@ class Category(models.Model):
     name_kz = models.CharField(max_length=255)
     is_active = models.BooleanField(default=True)
     sort_order = models.IntegerField(default=0)
+    show_in_tests = models.BooleanField(default=True)
 
     class Meta:
         db_table = "dict_category"

@@ -5,12 +5,13 @@ from .models import School, SchoolTariff, Instructor, InstructorTariff
 
 
 class SchoolTariffSerializer(serializers.ModelSerializer):
-    name_ru = serializers.CharField(source="tariff_plan.name_ru", read_only=True)
-    name_kz = serializers.CharField(source="tariff_plan.name_kz", read_only=True)
+    name_ru = serializers.CharField(source="tariff_name", read_only=True)
+    name_kz = serializers.CharField(source="tariff_name", read_only=True)
     category_ids = serializers.SerializerMethodField()
     training_time_ids = serializers.SerializerMethodField()
     gearbox_ids = serializers.SerializerMethodField()
     gearbox = serializers.SerializerMethodField()  # Для обратной совместимости с ботом
+    tariff_plan_id = serializers.SerializerMethodField()  # Для обратной совместимости с ботом
 
     class Meta:
         model = SchoolTariff
@@ -45,6 +46,10 @@ class SchoolTariffSerializer(serializers.ModelSerializer):
         """Возвращает код первой коробки передач для обратной совместимости с ботом"""
         gearbox = obj.gearboxes.first()
         return gearbox.code if gearbox else None
+    
+    def get_tariff_plan_id(self, obj):
+        """Возвращает None для обратной совместимости с ботом (больше не используется)"""
+        return None
     
     def to_representation(self, instance):
         data = super().to_representation(instance)
@@ -88,7 +93,15 @@ class SchoolListSerializer(serializers.ModelSerializer):
         return result if result else None
 
     def get_description(self, obj):
-        return {"ru": obj.description_ru or "", "kz": obj.description_kz or ""}
+        language = self.context.get('language', 'RU')
+        if language == 'KZ':
+            description = obj.description_kz or ""
+        else:
+            description = obj.description_ru or ""
+        # Возвращаем None, если описание пустое, чтобы поле было удалено в to_representation
+        if not description:
+            return None
+        return description
     
     def to_representation(self, instance):
         data = super().to_representation(instance)

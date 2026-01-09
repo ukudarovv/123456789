@@ -92,8 +92,11 @@ class ApiClient:
         resp = await self._request_with_retry("GET", f"{self.base_url}/dicts/cities", headers=self._headers())
         return resp.json()
 
-    async def get_categories(self):
-        resp = await self._request_with_retry("GET", f"{self.base_url}/dicts/categories", headers=self._headers())
+    async def get_categories(self, for_tests: bool = False):
+        params = {}
+        if for_tests:
+            params["for_tests"] = "true"
+        resp = await self._request_with_retry("GET", f"{self.base_url}/dicts/categories", params=params, headers=self._headers())
         return resp.json()
 
     async def get_training_formats(self):
@@ -110,7 +113,7 @@ class ApiClient:
         )
         return resp.json()
 
-    async def get_school_detail(self, school_id: int, category_id: Optional[int] = None, training_format_id: Optional[int] = None, training_time_id: Optional[int] = None, gearbox: Optional[str] = None):
+    async def get_school_detail(self, school_id: int, category_id: Optional[int] = None, training_format_id: Optional[int] = None, training_time_id: Optional[int] = None, gearbox: Optional[str] = None, language: Optional[str] = None):
         params = {}
         if category_id:
             params["category_id"] = category_id
@@ -120,6 +123,8 @@ class ApiClient:
             params["training_time_id"] = training_time_id
         if gearbox:
             params["gearbox"] = gearbox
+        if language:
+            params["language"] = language
         resp = await self._request_with_retry("GET", f"{self.base_url}/schools/{school_id}", params=params, headers=self._headers())
         return resp.json()
 
