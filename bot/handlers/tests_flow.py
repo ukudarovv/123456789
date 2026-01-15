@@ -1,3 +1,5 @@
+import logging
+
 from aiogram import Router, F
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
@@ -12,6 +14,8 @@ from utils.validators import normalize_phone, is_valid_iin, is_valid_email
 from utils.whatsapp import build_wa_link_tests
 from services.analytics import send_event
 from aiogram.types import ContentType
+
+logger = logging.getLogger(__name__)
 
 router = Router()
 
@@ -219,11 +223,48 @@ async def tests_name(message: Message, state: FSMContext):
 @router.message(TestsFlow.iin)
 async def tests_iin(message: Message, state: FSMContext):
     lang = await get_language(state)
+    if is_main_menu(message.text, lang):
+        await state.clear()
+        await message.answer(t("main_menu", lang), reply_markup=main_menu(lang))
+        return
+    if is_back(message.text, lang):
+        await state.set_state(TestsFlow.name)
+        await message.answer(t("enter_name_full", lang), reply_markup=back_keyboard(lang))
+        return
+    
     iin = message.text.strip()
     if not is_valid_iin(iin):
         await message.answer(t("invalid_iin", lang), reply_markup=back_keyboard(lang))
         return
     await state.update_data(iin=iin)
+    await message.answer(t("enter_phone_contact", lang), reply_markup=phone_keyboard(lang))
+    await state.set_state(TestsFlow.phone)
+
+
+@router.message(TestsFlow.phone)
+async def tests_phone(message: Message, state: FSMContext):
+    lang = await get_language(state)
+    if is_main_menu(message.text, lang):
+        await state.clear()
+        await message.answer(t("main_menu", lang), reply_markup=main_menu(lang))
+        return
+    if is_back(message.text, lang):
+        await state.set_state(TestsFlow.iin)
+        await message.answer(t("enter_iin", lang), reply_markup=back_keyboard(lang))
+        return
+    
+    # Обработка request_contact
+    phone = None
+    if message.contact:
+        phone = normalize_phone(message.contact.phone_number)
+    elif message.text:
+        phone = normalize_phone(message.text)
+    
+    if not phone:
+        await message.answer(t("invalid_phone", lang), reply_markup=phone_keyboard(lang))
+        return
+    
+    await state.update_data(phone=phone)
     await message.answer(t("enter_whatsapp_contact", lang), reply_markup=phone_keyboard(lang))
     await state.set_state(TestsFlow.whatsapp)
 
@@ -236,8 +277,8 @@ async def tests_whatsapp(message: Message, state: FSMContext):
         await message.answer(t("main_menu", lang), reply_markup=main_menu(lang))
         return
     if is_back(message.text, lang):
-        await state.set_state(TestsFlow.iin)
-        await message.answer(t("enter_iin", lang), reply_markup=back_keyboard(lang))
+        await state.set_state(TestsFlow.phone)
+        await message.answer(t("enter_phone_contact", lang), reply_markup=phone_keyboard(lang))
         return
     
     # Обработка request_contact
@@ -256,11 +297,13 @@ async def tests_whatsapp(message: Message, state: FSMContext):
     # Показываем экран подтверждения
     data = await state.get_data()
     category_name = data.get("category_name", "")
+    phone = data.get("phone", "")
     
     confirm_text_ru = (
         f"{t('confirm_data', lang)}\n\n"
         f"👤 Имя, фамилия и отчество: {data['name']}\n"
         f"🆔 ИИН: {data['iin']}\n"
+        f"📱 Телефон: {phone}\n"
         f"💬 WhatsApp номер: {whatsapp}\n"
         f"📘 Услуга: {t('tests_info_title', lang)} {category_name}"
     )
@@ -268,6 +311,7 @@ async def tests_whatsapp(message: Message, state: FSMContext):
         f"{t('confirm_data', lang)}\n\n"
         f"👤 Аты, тегі және әкесінің аты: {data['name']}\n"
         f"🆔 ЖСН: {data['iin']}\n"
+        f"📱 Телефон: {phone}\n"
         f"💬 WhatsApp нөмірі: {whatsapp}\n"
         f"📘 Қызмет: {t('tests_info_title', lang)} {category_name}"
     )
@@ -293,7 +337,7 @@ async def tests_confirm(message: Message, state: FSMContext):
             "last_name": message.from_user.last_name,
             "language": lang,
         },
-        "contact": {"name": data["name"], "phone": data["whatsapp"]},
+        "contact": {"name": data["name"], "phone": data["phone"]},
         "payload": {
             "category_id": data.get("category_id"),
             "iin": data["iin"],
@@ -314,9 +358,17 @@ async def tests_confirm(message: Message, state: FSMContext):
     await message.answer(t("thank_you", lang), reply_markup=main_menu(lang))
     
     # Генерируем WhatsApp сообщение владельцу согласно ТЗ
-    # Получаем номер WhatsApp из настроек
-    settings = data.get("settings", {})
-    owner_whatsapp = settings.get("owner_whatsapp", "")
+    # Получаем номер WhatsApp из БД через API (актуальный номер)
+    api_for_settings = ApiClient()
+    try:
+        settings = await api_for_settings.get_settings()
+        owner_whatsapp = settings.get("owner_whatsapp", "")
+    except Exception as exc:
+        logger.warning(f"Failed to get settings for WhatsApp link: {exc}")
+        owner_whatsapp = ""
+    finally:
+        await api_for_settings.close()
+    
     wa_link = build_wa_link_tests("", data, category_name, lang, owner_whatsapp=owner_whatsapp)
     if wa_link:
         await send_event("whatsapp_opened", {"flow": "tests"}, bot_user_id=message.from_user.id)
@@ -354,19 +406,23 @@ async def tests_confirm_any(message: Message, state: FSMContext):
     # Если не "Всё верно" и не "Исправить", показываем снова подтверждение
     data = await state.get_data()
     category_name = data.get("category_name", "")
+    phone = data.get("phone", "")
+    whatsapp = data.get("whatsapp", "")
     
     confirm_text_ru = (
         f"{t('confirm_data', lang)}\n\n"
         f"👤 Имя, фамилия и отчество: {data['name']}\n"
         f"🆔 ИИН: {data['iin']}\n"
-        f"💬 WhatsApp номер: {data['whatsapp']}\n"
+        f"📱 Телефон: {phone}\n"
+        f"💬 WhatsApp номер: {whatsapp}\n"
         f"📘 Услуга: {t('tests_info_title', lang)} {category_name}"
     )
     confirm_text_kz = (
         f"{t('confirm_data', lang)}\n\n"
         f"👤 Аты, тегі және әкесінің аты: {data['name']}\n"
         f"🆔 ЖСН: {data['iin']}\n"
-        f"💬 WhatsApp нөмірі: {data['whatsapp']}\n"
+        f"📱 Телефон: {phone}\n"
+        f"💬 WhatsApp нөмірі: {whatsapp}\n"
         f"📘 Қызмет: {t('tests_info_title', lang)} {category_name}"
     )
     text = confirm_text_kz if lang == "KZ" else confirm_text_ru
